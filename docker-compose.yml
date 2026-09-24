@@ -17,5 +17,26 @@ services:
       timeout: 5s
       retries: 5
 
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: anaska-backend
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "5000:5000"
+    environment:
+      PORT: 5000
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${DB_USER:-anaska_user}:${DB_PASSWORD:-anaska_secret}@postgres:5432/${DB_NAME:-anaska_db}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-anaska_jwt_access_secret_super_secure_key_2026}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-anaska_jwt_refresh_secret_super_secure_key_2026}
+      JWT_ACCESS_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 7d
+      CORS_ORIGIN: "*"
+
 volumes:
   postgres_data:

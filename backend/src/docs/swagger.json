@@ -1,0 +1,173 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Anaska Music & DJ Muse AI API",
+    "version": "1.0.0",
+    "description": "API documentation for the Anaska mobile music streaming application with DJ Muse AI assistant."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000",
+      "description": "Local Development Server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "responses": {
+          "200": { "description": "Backend and database are healthy" },
+          "503": { "description": "Database or service degraded" }
+        }
+      }
+    },
+    "/api/auth/signup": {
+      "post": {
+        "summary": "User registration with bcrypt password hashing",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["username", "email", "password"],
+                "properties": {
+                  "username": { "type": "string", "example": "anas_dev" },
+                  "email": { "type": "string", "example": "anas@example.com" },
+                  "password": { "type": "string", "example": "securePass123!" },
+                  "genrePreferences": { "type": "array", "items": { "type": "string" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "User created successfully with access and refresh tokens" },
+          "409": { "description": "Username or email already exists" }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "summary": "User login with JWT generation",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["login", "password"],
+                "properties": {
+                  "login": { "type": "string", "example": "demo@anaska.com" },
+                  "password": { "type": "string", "example": "password123" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Login successful" },
+          "401": { "description": "Invalid credentials" }
+        }
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "summary": "Refresh expired JWT access token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["refreshToken"],
+                "properties": {
+                  "refreshToken": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Tokens refreshed" }
+        }
+      }
+    },
+    "/api/music/genres": {
+      "get": {
+        "summary": "Retrieve all music genres",
+        "responses": {
+          "200": { "description": "List of genres" }
+        }
+      }
+    },
+    "/api/music/tracks": {
+      "get": {
+        "summary": "Retrieve tracks with filtering by genre or search query",
+        "parameters": [
+          { "name": "genreId", "in": "query", "schema": { "type": "string" } },
+          { "name": "search", "in": "query", "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer" } },
+          { "name": "offset", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "List of tracks matching criteria" }
+        }
+      }
+    },
+    "/api/music/tracks/{id}": {
+      "get": {
+        "summary": "Get track details by ID",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Track record found" },
+          "404": { "description": "Track not found" }
+        }
+      }
+    },
+    "/api/chat/stream": {
+      "post": {
+        "summary": "Stream conversation with DJ Muse AI agent via Server-Sent Events",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["message"],
+                "properties": {
+                  "message": { "type": "string", "example": "Recommend me something relaxing" },
+                  "sessionId": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "SSE text stream (text/event-stream)" }
+        }
+      }
+    },
+    "/api/chat/history": {
+      "get": {
+        "summary": "Retrieve persisted chat history for logged-in user",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Chat messages and session ID" }
+        }
+      }
+    }
+  }
+}
