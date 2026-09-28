@@ -16,6 +16,19 @@ export interface TrackRecord {
   created_at: Date;
 }
 
+const genreToAudiusTag: Record<string, string> = {
+  electronic: 'Electronic',
+  ambient: 'Ambient',
+  synthwave: 'Electronic',
+  lofi: 'Lo-Fi',
+  rock: 'Rock',
+  hiphop: 'Hip-Hop/Rap',
+};
+
+// Fast memory cache for audio discovery responses
+const discoveryCache = new Map<string, { data: TrackRecord[]; timestamp: number }>();
+const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
 export class MusicService {
   async getGenres(): Promise<GenreRecord[]> {
     const res = await pool.query<GenreRecord>(
@@ -76,7 +89,15 @@ export class MusicService {
     const res = await pool.query<TrackRecord>(queryStr, values);
     let tracks = res.rows;
 
-    // If searching, also search live streaming catalog (Audius open music network)
+    const cacheKey = `search_${filter?.search || ''}_genre_${filter?.genreId || ''}`;
+    const cached = discoveryCache.get(cacheKey);
+
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      tracks = [...tracks, ...cached.data];
+      return { tracks, total: tracks.length };
+    }
+
+    // If searching, search live Audius catalog
     if (filter?.search && filter.search.trim().length > 1) {
       try {
         const audiusRes = await fetch(
@@ -102,11 +123,43 @@ export class MusicService {
             created_at: new Date(),
           }));
 
+          discoveryCache.set(cacheKey, { data: liveTracks, timestamp: Date.now() });
           tracks = [...tracks, ...liveTracks];
         }
       } catch (e) {
-        // Fallback gracefully to database tracks on network hiccup
+        // Fallback gracefully on timeout
       }
+    } else if (filter?.genreId && tracks.length < 8) {
+      // Enrich genre with trending tracks if library has few tracks for this genre
+      const audiusGenre = genreToAudiusTag[filter.genreId] || 'Electronic';
+      try {
+        const audiusRes = await fetch(
+          `https://discoveryprovider.audius.co/v1/tracks/trending?genre=${encodeURIComponent(
+            audiusGenre
+          )}&limit=10&app_name=ANASKA`,
+          { signal: AbortSignal.timeout(3500) }
+        );
+
+        if (audiusRes.ok) {
+          const json: any = await audiusRes.json();
+          const liveTracks: TrackRecord[] = (json.data || []).map((t: any) => ({
+            id: `audius-${t.id}`,
+            title: t.title,
+            artist: t.user?.name || 'Independent Artist',
+            genre_id: filter.genreId!,
+            audio_url: `https://discoveryprovider.audius.co/v1/tracks/${t.id}/stream?app_name=ANASKA`,
+            cover_url:
+              t.artwork?.['480x480'] ||
+              t.artwork?.['150x150'] ||
+              'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80',
+            duration: t.duration || 180,
+            created_at: new Date(),
+          }));
+
+          discoveryCache.set(cacheKey, { data: liveTracks, timestamp: Date.now() });
+          tracks = [...tracks, ...liveTracks];
+        }
+      } catch (e) {}
     }
 
     return { tracks, total: tracks.length };

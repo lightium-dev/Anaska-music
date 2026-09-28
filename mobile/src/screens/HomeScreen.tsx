@@ -233,7 +233,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                     if (isHeroPlaying) {
                       pause();
                     } else {
-                      play(heroTrack);
+                      play(heroTrack, [heroTrack, ...tracks]);
                     }
                   }}
                   activeOpacity={0.85}
@@ -307,7 +307,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               <TouchableOpacity
                 key={track.id}
                 style={styles.carouselCard}
-                onPress={() => play(track)}
+                onPress={() => play(track, tracks)}
                 activeOpacity={0.85}
               >
                 <View style={styles.carouselArtWrapper}>
@@ -374,7 +374,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                   if (isSelected && isPlaying) {
                     pause();
                   } else {
-                    play(track);
+                    play(track, filteredTracks.length > 0 ? filteredTracks : tracks);
                   }
                 }}
                 activeOpacity={0.8}

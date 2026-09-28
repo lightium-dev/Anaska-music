@@ -11,7 +11,7 @@ interface MiniPlayerProps {
 }
 
 export const MiniPlayer: React.FC<MiniPlayerProps> = ({ onPress, bottomOffset }) => {
-  const { currentTrack, isPlaying, togglePlayPause, progress } = usePlayerStore();
+  const { currentTrack, isPlaying, togglePlayPause, playNext, progress } = usePlayerStore();
   const [isLiked, setIsLiked] = useState(false);
 
   if (!currentTrack) {
@@ -88,6 +88,18 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({ onPress, bottomOffset })
                 style={{ marginLeft: isPlaying ? 0 : 2 }}
               />
             </LinearGradient>
+          </TouchableOpacity>
+
+          {/* Skip Next Button */}
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={(e) => {
+              e.stopPropagation();
+              playNext();
+            }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="play-skip-forward" size={19} color={colors.textFrost} />
           </TouchableOpacity>
         </View>
       </TouchableOpacity>

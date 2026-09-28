@@ -78,7 +78,7 @@ export const SearchScreen: React.FC = () => {
           if (isCurrent && isPlaying) {
             pause();
           } else {
-            play(item);
+            play(item, tracks);
           }
         }}
       >

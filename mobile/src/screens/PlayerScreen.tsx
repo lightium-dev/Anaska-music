@@ -22,17 +22,24 @@ interface PlayerScreenProps {
 export const PlayerScreen: React.FC<PlayerScreenProps> = ({ navigation }) => {
   const {
     currentTrack,
+    queue,
+    currentIndex,
     isPlaying,
+    isLoading,
     progress,
     currentTime,
     duration,
+    isShuffle,
+    repeatMode,
     togglePlayPause,
     seek,
+    playNext,
+    playPrevious,
+    toggleShuffle,
+    toggleRepeat,
   } = usePlayerStore();
 
   const [isLiked, setIsLiked] = useState(false);
-  const [isShuffle, setIsShuffle] = useState(true);
-  const [repeatMode, setRepeatMode] = useState<'off' | 'all' | 'one'>('all');
 
   const formatTime = (secs: number) => {
     if (isNaN(secs) || secs < 0) return '0:00';
@@ -61,12 +68,6 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ navigation }) => {
     );
   }
 
-  const toggleRepeat = () => {
-    if (repeatMode === 'off') setRepeatMode('all');
-    else if (repeatMode === 'all') setRepeatMode('one');
-    else setRepeatMode('off');
-  };
-
   return (
     <View style={styles.container}>
       {/* Background Aura */}
@@ -84,7 +85,11 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ navigation }) => {
         </TouchableOpacity>
 
         <View style={styles.topBarCenter}>
-          <Text style={styles.nowPlayingLabel}>NOW PLAYING FROM AI FLOW</Text>
+          <Text style={styles.nowPlayingLabel}>
+            {queue.length > 0
+              ? `FLOW QUEUE ${currentIndex >= 0 ? currentIndex + 1 : 1} OF ${queue.length}`
+              : 'NOW PLAYING FROM AI FLOW'}
+          </Text>
           <Text style={styles.genreLabel}>
             {currentTrack.genreId ? currentTrack.genreId.toUpperCase() : 'SUBLIMINAL'}
           </Text>
@@ -200,7 +205,7 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ navigation }) => {
         {/* Shuffle */}
         <TouchableOpacity
           style={styles.transportBtn}
-          onPress={() => setIsShuffle(!isShuffle)}
+          onPress={toggleShuffle}
           activeOpacity={0.7}
         >
           <Ionicons
@@ -214,7 +219,7 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ navigation }) => {
         {/* Previous */}
         <TouchableOpacity
           style={styles.secondaryTransportBtn}
-          onPress={() => seek(0)}
+          onPress={playPrevious}
           activeOpacity={0.7}
         >
           <Ionicons name="play-skip-back" size={24} color={colors.textFrost} />
@@ -244,7 +249,7 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ navigation }) => {
         {/* Next */}
         <TouchableOpacity
           style={styles.secondaryTransportBtn}
-          onPress={() => seek(1)}
+          onPress={playNext}
           activeOpacity={0.7}
         >
           <Ionicons name="play-skip-forward" size={24} color={colors.textFrost} />
