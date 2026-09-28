@@ -22,6 +22,7 @@ const genreToAudiusTag: Record<string, string> = {
   synthwave: 'Electronic',
   lofi: 'Lo-Fi',
   rock: 'Rock',
+  metal: 'Metal',
   hiphop: 'Hip-Hop/Rap',
 };
 

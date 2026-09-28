@@ -24,6 +24,8 @@ interface HomeScreenProps {
 
 const FILTER_TAGS = [
   'All',
+  'Rock & Grunge',
+  'Metal & Industrial',
   'Sub-Zero Beats',
   'Arctic Chill',
   'Glacial Bass',
@@ -32,8 +34,11 @@ const FILTER_TAGS = [
 ];
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
-  const { user } = useUserStore();
-  const { play, pause, currentTrack, isPlaying } = usePlayerStore();
+  const user = useUserStore((s) => s.user);
+  const play = usePlayerStore((s) => s.play);
+  const pause = usePlayerStore((s) => s.pause);
+  const currentTrack = usePlayerStore((s) => s.currentTrack);
+  const isPlaying = usePlayerStore((s) => s.isPlaying);
 
   const [activeFilter, setActiveFilter] = useState('All');
   const [genres, setGenres] = useState<Genre[]>([]);
@@ -69,6 +74,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   // Filtered tracks
   const filteredTracks = tracks.filter((t) => {
     if (activeFilter === 'All') return true;
+    if (activeFilter === 'Rock & Grunge') return t.genreId === 'rock';
+    if (activeFilter === 'Metal & Industrial') return t.genreId === 'metal';
     if (activeFilter === 'Synthwave') return t.genreId === 'synthwave';
     if (activeFilter === 'Sub-Zero Beats' || activeFilter === 'Glacial Bass') {
       return t.genreId === 'electronic' || t.genreId === 'hiphop';

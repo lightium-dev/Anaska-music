@@ -23,7 +23,10 @@ export const SearchScreen: React.FC = () => {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const { play, pause, currentTrack, isPlaying } = usePlayerStore();
+  const play = usePlayerStore((s) => s.play);
+  const pause = usePlayerStore((s) => s.pause);
+  const currentTrack = usePlayerStore((s) => s.currentTrack);
+  const isPlaying = usePlayerStore((s) => s.isPlaying);
 
   useEffect(() => {
     async function init() {

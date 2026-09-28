@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, StyleSheet, ActivityIndicator, TouchableOpacity, Text, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -25,16 +25,9 @@ import { MiniPlayer } from '../components/MiniPlayer';
 const Tab = createBottomTabNavigator();
 const RootStack = createNativeStackNavigator();
 
-function CustomTabBar({ state, descriptors, navigation, onTabChange }: any) {
+function CustomTabBar({ state, descriptors, navigation }: any) {
   const insets = useSafeAreaInsets();
   const safeBottom = Math.max(insets.bottom, Platform.OS === 'android' ? 16 : 12);
-  const activeRouteName = state.routes[state.index]?.name;
-
-  useEffect(() => {
-    if (activeRouteName && onTabChange) {
-      onTabChange(activeRouteName);
-    }
-  }, [activeRouteName, onTabChange]);
 
   return (
     <View style={[styles.tabBarContainer, { paddingBottom: safeBottom }]}>
@@ -135,12 +128,12 @@ function CustomTabBar({ state, descriptors, navigation, onTabChange }: any) {
 function MainTabs({ onTabChange }: { onTabChange: (tabName: string) => void }) {
   return (
     <Tab.Navigator
-      tabBar={(props) => <CustomTabBar {...props} onTabChange={onTabChange} />}
+      tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{ headerShown: false }}
       screenListeners={{
         state: (e: any) => {
           const routeName = e.data?.state?.routes?.[e.data?.state?.index]?.name;
-          if (routeName && onTabChange) {
+          if (routeName) {
             onTabChange(routeName);
           }
         },
@@ -155,17 +148,21 @@ function MainTabs({ onTabChange }: { onTabChange: (tabName: string) => void }) {
 }
 
 function MainWithPlayer({ navigation }: any) {
-  const { currentTrack } = usePlayerStore();
+  const currentTrack = usePlayerStore((s) => s.currentTrack);
   const [currentTab, setCurrentTab] = useState('HomeTab');
   const insets = useSafeAreaInsets();
   const safeBottom = Math.max(insets.bottom, Platform.OS === 'android' ? 16 : 12);
   const bottomTabBarHeight = 56 + safeBottom;
 
+  const handleTabChange = useCallback((tabName: string) => {
+    setCurrentTab((prev) => (prev !== tabName ? tabName : prev));
+  }, []);
+
   const isAISection = currentTab === 'ChatTab';
 
   return (
     <View style={styles.flexContainer}>
-      <MainTabs onTabChange={setCurrentTab} />
+      <MainTabs onTabChange={handleTabChange} />
       {currentTrack && !isAISection && (
         <MiniPlayer
           onPress={() => navigation.navigate('PlayerModal')}

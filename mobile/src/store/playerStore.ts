@@ -144,19 +144,28 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
         player.loop = true;
       }
 
+      let lastPos = -1;
+      let lastPlaying = false;
       let hasFinishedTriggered = false;
 
       player.addListener('playbackStatusUpdate', (status: AudioStatus) => {
         if (status.isLoaded) {
           const trackDuration = status.duration > 0 ? status.duration : (targetTrack!.duration || 180);
           const pos = status.currentTime;
-          
-          set({
-            currentTime: pos,
-            duration: trackDuration,
-            progress: trackDuration > 0 ? Math.min(1, Math.max(0, pos / trackDuration)) : 0,
-            isPlaying: status.playing,
-          });
+          const isPlayStateChanged = status.playing !== lastPlaying;
+          const isTimeChanged = Math.abs(pos - lastPos) >= 0.5;
+
+          if (isPlayStateChanged || isTimeChanged) {
+            lastPos = pos;
+            lastPlaying = status.playing;
+
+            set({
+              currentTime: pos,
+              duration: trackDuration,
+              progress: trackDuration > 0 ? Math.min(1, Math.max(0, pos / trackDuration)) : 0,
+              isPlaying: status.playing,
+            });
+          }
 
           // Handle automatic track transition when song reaches end
           if (status.didJustFinish && !hasFinishedTriggered) {
