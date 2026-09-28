@@ -441,7 +441,7 @@ const styles = StyleSheet.create({
   scroll: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl + 10,
-    paddingBottom: 140,
+    paddingBottom: 240, // Generous clearance so the logout button appears completely above the floating mini player bar
     gap: 16,
   },
   header: {

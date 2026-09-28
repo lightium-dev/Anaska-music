@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
   trackList: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
-    paddingBottom: 140,
+    paddingBottom: 220,
     gap: 8,
   },
   trackRow: {

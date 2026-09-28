@@ -291,16 +291,21 @@ ${ragContext ? `Catalog knowledge & track context from Anaska library:\n${ragCon
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.flushHeaders?.();
+    res.write(': ping\n\n');
 
     // 5. Generate intelligent DJ Muse response (Real LLM or curated fallback)
-    let museReply: string | null = await this.generateRealAIReply(userMessage, history, ragContext);
+    let museReply: string | null = null;
+    try {
+      museReply = await this.generateRealAIReply(userMessage, history, ragContext);
+    } catch (e) {
+      console.warn('[DJ Muse] AI reply generation error:', e);
+    }
 
     if (!museReply) {
       const q = userMessage.toLowerCase();
       if (q.includes('recommend') || q.includes('suggest') || q.includes('track') || q.includes('song')) {
-        museReply = `Hey there! 🎧 DJ Muse here with your sonic prescription. Based on our catalog, check out:\n\n${
-          ragContext || '• "Neon Horizon" by Cyberpulse (Synthwave)\n• "Rainy Cafe Study" by Coffee & Rain (Lo-Fi Chill)'
-        }\n\nSink into the groove and let me know how that resonates!`;
+        museReply = `Hey there! 🎧 DJ Muse here with your sonic prescription. Based on our catalog, check out:\n\n${ragContext || '• "Neon Horizon" by Cyberpulse (Synthwave)\n• "Rainy Cafe Study" by Coffee & Rain (Lo-Fi Chill)'
+          }\n\nSink into the groove and let me know how that resonates!`;
       } else if (q.includes('lofi') || q.includes('chill') || q.includes('study')) {
         museReply = `Ah, craving that cozy warmth! ☕ Lo-fi hip hop combines tape-hiss warmth with jazzy chords designed for focus and calm. I suggest throwing on "Rainy Cafe Study" or "Golden Hour Dreams".`;
       } else if (q.includes('synthwave') || q.includes('retro') || q.includes('80s')) {
@@ -308,9 +313,8 @@ ${ragContext ? `Catalog knowledge & track context from Anaska library:\n${ragCon
       } else if (q.includes('who are you') || q.includes('dj muse')) {
         museReply = `I am DJ Muse, your personal AI music curator in Anaska! 🎵 I can provide track recommendations, dive into music trivia, or match playlists to your current mood. What vibe are you after today?`;
       } else {
-        museReply = `That's an interesting musical thought! ${
-          ragContext ? `Here's a cool nugget from our archives:\n${ragContext}\n\n` : ''
-        }I'm here to match you with sounds that elevate your flow. Want some synthwave rhythms or chill lo-fi beats?`;
+        museReply = `That's an interesting musical thought! ${ragContext ? `Here's a cool nugget from our archives:\n${ragContext}\n\n` : ''
+          }I'm here to match you with sounds that elevate your flow. Want some synthwave rhythms or chill lo-fi beats?`;
       }
     }
 

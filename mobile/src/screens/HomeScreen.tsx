@@ -542,7 +542,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   scroll: {
-    paddingBottom: 140,
+    paddingBottom: 220,
   },
   greetingSection: {
     paddingHorizontal: spacing.lg,

@@ -42,58 +42,38 @@ export const chatService = {
       });
 
       if (!response.ok) {
-        throw new Error(`Chat stream failed with status ${response.status}`);
+        const errorJson = await response.json().catch(() => null);
+        throw new Error(errorJson?.error?.message || `Chat stream failed with status ${response.status}`);
       }
 
-      // Read response stream
-      if (response.body && (response.body as any).getReader) {
-        const reader = (response.body as any).getReader();
-        const decoder = new TextDecoder();
-        let full = '';
+      // Universal React Native response reader with simulated stream effect
+      const text = await response.text();
+      const lines = text.split('\n\n');
+      let full = '';
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          const text = decoder.decode(value);
-          const lines = text.split('\n\n');
-
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              try {
-                const data = JSON.parse(line.replace('data: ', '').trim());
-                if (data.chunk) {
-                  full += data.chunk;
-                  onChunk(data.chunk);
-                }
-                if (data.done) {
-                  onComplete(data.fullResponse || full);
-                }
-              } catch {
-                // Ignore parse errors on partial chunks
-              }
+      for (const rawLine of lines) {
+        const line = rawLine.trim();
+        if (line.startsWith('data: ')) {
+          try {
+            const data = JSON.parse(line.replace('data: ', '').trim());
+            if (data.chunk) {
+              full += data.chunk;
+              onChunk(data.chunk);
+              // Yield briefly to display a smooth, natural typing effect on mobile
+              await new Promise((resolve) => setTimeout(resolve, 20));
             }
+            if (data.done) {
+              full = data.fullResponse || full;
+            }
+          } catch {
+            // Ignore partial/comment frames (e.g. : ping)
           }
         }
-      } else {
-        // Fallback for environments where body.getReader is not available
-        const text = await response.text();
-        const lines = text.split('\n\n');
-        let full = '';
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.replace('data: ', '').trim());
-              if (data.chunk) {
-                full += data.chunk;
-                onChunk(data.chunk);
-              }
-            } catch {}
-          }
-        }
-        onComplete(full);
       }
+
+      onComplete(full);
     } catch (err: any) {
+      console.error('Chat stream error:', err);
       onError(err);
     }
   },

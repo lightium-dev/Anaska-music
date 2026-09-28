@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import { streamChat, getHistory } from '../controllers/chatController';
-import { requireAuth } from '../middlewares/authMiddleware';
+import { optionalAuth } from '../middlewares/authMiddleware';
 
 const router = Router();
 
-router.use(requireAuth);
+router.use(optionalAuth);
 router.post('/stream', streamChat);
 router.get('/history', getHistory);
 
