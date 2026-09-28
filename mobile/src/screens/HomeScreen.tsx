@@ -125,14 +125,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.avatarButton}
+            style={styles.avatarButtonWrapper}
             onPress={() => navigation.navigate('ProfileTab')}
             activeOpacity={0.8}
+            accessibilityLabel="Settings"
           >
-            <Image
-              source={require('../../assets/avatar.png')}
-              style={styles.avatarImg}
-            />
+            <View style={styles.avatarButton}>
+              <Image
+                source={
+                  user?.avatar && user.avatar.startsWith('http')
+                    ? { uri: user.avatar }
+                    : require('../../assets/avatar.png')
+                }
+                style={styles.avatarImg}
+              />
+            </View>
+            <View style={styles.settingsBadge}>
+              <Ionicons name="settings" size={9} color="#002022" />
+            </View>
           </TouchableOpacity>
         </View>
       </View>
@@ -498,17 +508,38 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 0.8,
   },
+  avatarButtonWrapper: {
+    position: 'relative',
+  },
   avatarButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     borderWidth: 1.5,
-    borderColor: 'rgba(0, 242, 254, 0.4)',
+    borderColor: 'rgba(0, 242, 254, 0.6)',
     overflow: 'hidden',
   },
   avatarImg: {
     width: '100%',
     height: '100%',
+  },
+  settingsBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    backgroundColor: colors.primary,
+    width: 15,
+    height: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#070B14',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 4,
+    elevation: 4,
   },
   scroll: {
     paddingBottom: 140,

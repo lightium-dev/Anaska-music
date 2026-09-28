@@ -11,6 +11,7 @@ interface UserState {
   setUser: (user: User | null) => void;
   setTokens: (accessToken: string | null, refreshToken: string | null) => void;
   updateGenres: (genres: string[]) => void;
+  updateAvatar: (avatar: string) => Promise<void>;
   logout: () => Promise<void>;
   loadStoredAuth: () => Promise<void>;
 }
@@ -47,6 +48,15 @@ export const useUserStore = create<UserState>((set, get) => ({
     if (current) {
       const updated = { ...current, genrePreferences: genres };
       set({ user: updated, isOnboarded: genres.length > 0 });
+      await AsyncStorage.setItem('@anaska_user', JSON.stringify(updated));
+    }
+  },
+
+  updateAvatar: async (avatar: string) => {
+    const current = get().user;
+    if (current) {
+      const updated = { ...current, avatar };
+      set({ user: updated });
       await AsyncStorage.setItem('@anaska_user', JSON.stringify(updated));
     }
   },

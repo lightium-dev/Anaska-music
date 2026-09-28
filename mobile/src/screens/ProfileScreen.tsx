@@ -8,22 +8,87 @@ import {
   Alert,
   Image,
   Switch,
+  Modal,
+  TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius } from '../constants/theme';
 import { useUserStore } from '../store/userStore';
+import { apiRequest } from '../services/api';
+
+const AVATAR_PRESETS = [
+  {
+    id: 'default',
+    title: 'DJ Muse Cyber',
+    subtitle: 'Default Persona',
+    uri: '',
+  },
+  {
+    id: 'glacial_dj',
+    title: 'Glacial DJ',
+    subtitle: 'Frost Neon',
+    uri: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
+  },
+  {
+    id: 'synthwave_pilot',
+    title: 'Synth Pilot',
+    subtitle: 'Retro Horizon',
+    uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80',
+  },
+  {
+    id: 'subzero_producer',
+    title: 'Sub-Zero',
+    subtitle: 'Electronic Producer',
+    uri: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&auto=format&fit=crop&q=80',
+  },
+  {
+    id: 'lofi_dreamer',
+    title: 'Lo-Fi Dreamer',
+    subtitle: 'Pastel Sunset',
+    uri: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&auto=format&fit=crop&q=80',
+  },
+  {
+    id: 'ambient_seeker',
+    title: 'Astral Flow',
+    subtitle: 'Deep Focus',
+    uri: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400&auto=format&fit=crop&q=80',
+  },
+];
 
 interface ProfileScreenProps {
   navigation: any;
 }
 
 export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
-  const { user, logout } = useUserStore();
+  const { user, logout, updateAvatar } = useUserStore();
 
   const [spatialAudio, setSpatialAudio] = useState(true);
   const [smartTransitions, setSmartTransitions] = useState(true);
   const [cryoEq, setCryoEq] = useState(true);
+
+  // Avatar Modal State
+  const [isAvatarModalVisible, setIsAvatarModalVisible] = useState(false);
+  const [customAvatarUrl, setCustomAvatarUrl] = useState('');
+  const [savingAvatar, setSavingAvatar] = useState(false);
+
+  const handleSaveAvatar = async (url: string) => {
+    try {
+      setSavingAvatar(true);
+      await updateAvatar(url);
+      await apiRequest('/api/auth/profile', {
+        method: 'PUT',
+        body: JSON.stringify({ avatar: url }),
+      }).catch((e) => console.warn('Could not sync avatar to backend:', e));
+      setIsAvatarModalVisible(false);
+      setCustomAvatarUrl('');
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Failed to save avatar');
+    } finally {
+      setSavingAvatar(false);
+    }
+  };
 
   const handleLogout = () => {
     Alert.alert('Log Out', 'Are you sure you want to log out of Anaska?', [
@@ -65,22 +130,45 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
 
         {/* Cyberpunk User Card with Glowing Avatar & Beacon */}
         <View style={styles.profileCard}>
-          <View style={styles.avatarWrapper}>
+          <TouchableOpacity
+            style={styles.avatarWrapper}
+            onPress={() => setIsAvatarModalVisible(true)}
+            activeOpacity={0.85}
+            accessibilityLabel="Change profile picture"
+          >
             <LinearGradient
               colors={['#00F2FE', '#38BDF8', '#91F1FF']}
               style={styles.avatarRing}
             >
               <Image
-                source={require('../../assets/avatar.png')}
+                source={
+                  user?.avatar && user.avatar.startsWith('http')
+                    ? { uri: user.avatar }
+                    : require('../../assets/avatar.png')
+                }
                 style={styles.avatarImg}
               />
             </LinearGradient>
+
+            {/* Edit Avatar Camera Badge */}
+            <View style={styles.avatarEditBadge}>
+              <Ionicons name="camera" size={13} color="#002022" />
+            </View>
 
             {/* Presence Beacon */}
             <View style={styles.presenceBeacon}>
               <View style={styles.presenceInner} />
             </View>
-          </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setIsAvatarModalVisible(true)}
+            style={styles.changeAvatarHintBtn}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="camera-outline" size={13} color={colors.primary} />
+            <Text style={styles.changeAvatarHintText}>Change profile picture</Text>
+          </TouchableOpacity>
 
           <View style={styles.nameRow}>
             <Text style={styles.displayName}>{user?.username || 'Alex Chen'}</Text>
@@ -139,14 +227,44 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
           </View>
         </View>
 
-        {/* Audio Engine & Hardware Settings */}
+        {/* Audio Engine & System Settings */}
         <View style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
             <View style={styles.sectionTitleRow}>
-              <Ionicons name="hardware-chip-outline" size={18} color={colors.primary} />
-              <Text style={styles.sectionTitle}>Audio Engine & Tuning</Text>
+              <Ionicons name="settings-outline" size={18} color={colors.primary} />
+              <Text style={styles.sectionTitle}>Profile & System Settings</Text>
             </View>
           </View>
+
+          {/* Setting Row: Profile Avatar */}
+          <TouchableOpacity
+            style={styles.settingRow}
+            onPress={() => setIsAvatarModalVisible(true)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.settingLeft}>
+              <View style={styles.settingIconBox}>
+                <Ionicons name="image-outline" size={18} color={colors.primary} />
+              </View>
+              <View>
+                <Text style={styles.settingTitle}>Profile Avatar</Text>
+                <Text style={styles.settingSubtitle}>Change your visual identity & photo</Text>
+              </View>
+            </View>
+            <View style={styles.settingRight}>
+              <View style={styles.miniAvatarWrapper}>
+                <Image
+                  source={
+                    user?.avatar && user.avatar.startsWith('http')
+                      ? { uri: user.avatar }
+                      : require('../../assets/avatar.png')
+                  }
+                  style={styles.miniAvatarImg}
+                />
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
+            </View>
+          </TouchableOpacity>
 
           {/* Toggle 1: Spatial Audio */}
           <View style={styles.toggleRow}>
@@ -213,6 +331,95 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
           <Text style={styles.logoutText}>Disconnect Frequency (Log Out)</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Avatar Selection & Setting Modal */}
+      <Modal
+        visible={isAvatarModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsAvatarModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <View>
+                <Text style={styles.modalMeta}>SETTING</Text>
+                <Text style={styles.modalTitle}>Select Profile Avatar</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setIsAvatarModalVisible(false)}
+                style={styles.modalCloseBtn}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Ionicons name="close" size={20} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} style={styles.modalScroll}>
+              <Text style={styles.modalSectionLabel}>PRESET SONIC PERSONAS</Text>
+              <View style={styles.presetsGrid}>
+                {AVATAR_PRESETS.map((item) => {
+                  const isCurrent =
+                    (!item.uri && (!user?.avatar || !user.avatar.startsWith('http'))) ||
+                    (item.uri && user?.avatar === item.uri);
+
+                  return (
+                    <TouchableOpacity
+                      key={item.id}
+                      style={[styles.presetCard, isCurrent && styles.presetCardActive]}
+                      onPress={() => handleSaveAvatar(item.uri)}
+                      activeOpacity={0.8}
+                    >
+                      <View style={styles.presetImgRing}>
+                        <Image
+                          source={item.uri ? { uri: item.uri } : require('../../assets/avatar.png')}
+                          style={styles.presetImg}
+                        />
+                        {isCurrent && (
+                          <View style={styles.presetActiveCheck}>
+                            <Ionicons name="checkmark-sharp" size={12} color="#002022" />
+                          </View>
+                        )}
+                      </View>
+                      <Text style={[styles.presetTitle, isCurrent && styles.presetTitleActive]}>
+                        {item.title}
+                      </Text>
+                      <Text style={styles.presetSubtitle}>{item.subtitle}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <Text style={styles.modalSectionLabel}>OR CUSTOM IMAGE URL</Text>
+              <View style={styles.customInputRow}>
+                <TextInput
+                  style={styles.customInput}
+                  placeholder="Paste direct image URL..."
+                  placeholderTextColor={colors.textMuted}
+                  value={customAvatarUrl}
+                  onChangeText={setCustomAvatarUrl}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                <TouchableOpacity
+                  style={[
+                    styles.saveCustomBtn,
+                    (!customAvatarUrl.trim() || savingAvatar) && styles.saveCustomBtnDisabled,
+                  ]}
+                  onPress={() => handleSaveAvatar(customAvatarUrl.trim())}
+                  disabled={!customAvatarUrl.trim() || savingAvatar}
+                >
+                  {savingAvatar ? (
+                    <ActivityIndicator size="small" color="#002022" />
+                  ) : (
+                    <Text style={styles.saveCustomBtnText}>Apply</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -495,5 +702,248 @@ const styles = StyleSheet.create({
     color: colors.error,
     fontSize: 14,
     fontWeight: '700',
+  },
+  avatarEditBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#070B14',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  changeAvatarHintBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: borderRadius.pill,
+    backgroundColor: 'rgba(0, 242, 254, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 242, 254, 0.25)',
+  },
+  changeAvatarHintText: {
+    color: colors.primary,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  settingLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  settingIconBox: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(0, 242, 254, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 242, 254, 0.2)',
+  },
+  settingTitle: {
+    color: colors.textPrimary,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  settingSubtitle: {
+    color: colors.textSecondary,
+    fontSize: 11,
+    marginTop: 2,
+  },
+  settingRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  miniAvatarWrapper: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1.5,
+    borderColor: 'rgba(0, 242, 254, 0.6)',
+    backgroundColor: '#070B14',
+  },
+  miniAvatarImg: {
+    width: '100%',
+    height: '100%',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(3, 7, 18, 0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.md,
+  },
+  modalCard: {
+    width: '100%',
+    maxHeight: '85%',
+    backgroundColor: '#0B132B',
+    borderRadius: borderRadius.xl,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 242, 254, 0.3)',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
+  modalMeta: {
+    color: colors.primary,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+  },
+  modalTitle: {
+    color: colors.textPrimary,
+    fontSize: 18,
+    fontWeight: '800',
+    marginTop: 2,
+  },
+  modalCloseBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalScroll: {
+    marginTop: spacing.xs,
+  },
+  modalSectionLabel: {
+    color: colors.secondary,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1,
+    marginTop: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  presetsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  presetCard: {
+    width: '48%',
+    backgroundColor: 'rgba(14, 24, 42, 0.9)',
+    borderRadius: borderRadius.md,
+    padding: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 242, 254, 0.15)',
+  },
+  presetCardActive: {
+    borderColor: colors.primary,
+    backgroundColor: 'rgba(0, 242, 254, 0.12)',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  presetImgRing: {
+    position: 'relative',
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    borderWidth: 2,
+    borderColor: 'rgba(0, 242, 254, 0.4)',
+    overflow: 'hidden',
+    marginBottom: 6,
+  },
+  presetImg: {
+    width: '100%',
+    height: '100%',
+  },
+  presetActiveCheck: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  presetTitle: {
+    color: colors.textPrimary,
+    fontSize: 12,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  presetTitleActive: {
+    color: colors.primary,
+  },
+  presetSubtitle: {
+    color: colors.textSecondary,
+    fontSize: 10,
+    textAlign: 'center',
+    marginTop: 2,
+  },
+  customInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 4,
+    marginBottom: spacing.md,
+  },
+  customInput: {
+    flex: 1,
+    backgroundColor: 'rgba(14, 24, 42, 0.9)',
+    borderRadius: borderRadius.md,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    color: colors.textPrimary,
+    fontSize: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 242, 254, 0.2)',
+  },
+  saveCustomBtn: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  saveCustomBtnDisabled: {
+    opacity: 0.4,
+  },
+  saveCustomBtnText: {
+    color: '#002022',
+    fontWeight: '800',
+    fontSize: 12,
   },
 });
