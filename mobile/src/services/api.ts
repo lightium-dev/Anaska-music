@@ -1,14 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeModules, Platform } from 'react-native';
 
-function resolveApiBaseUrl(): string {
-  // 1. Explicit environment variable
-  const envUrl = process.env.EXPO_PUBLIC_API_URL;
-  if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
-    return envUrl;
-  }
-
-  // 2. In Expo/React Native, extract host IP from bundle scriptURL
+export function getApiBaseUrl(): string {
+  // 1. First priority: extract host directly from Metro bundle URL connected to this device
   try {
     const scriptURL: string | undefined = NativeModules.SourceCode?.scriptURL;
     if (scriptURL) {
@@ -19,17 +13,23 @@ function resolveApiBaseUrl(): string {
     }
   } catch {}
 
+  // 2. Explicit environment variable
+  const envUrl = process.env.EXPO_PUBLIC_API_URL;
+  if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
+    return envUrl;
+  }
+
   // 3. Fallback
-  return envUrl || (Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000');
+  return Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
 }
 
-const API_BASE_URL = resolveApiBaseUrl();
+export const API_BASE_URL = getApiBaseUrl();
 
 export async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint}`;
+  const url = `${getApiBaseUrl()}${endpoint}`;
   const token = await AsyncStorage.getItem('@anaska_access_token');
 
   const headers: Record<string, string> = {

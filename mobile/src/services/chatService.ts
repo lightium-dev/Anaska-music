@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_BASE_URL, apiRequest } from './api';
+import { getApiBaseUrl, apiRequest } from './api';
 import { ChatMessage } from '../types';
 
 export const chatService = {
@@ -29,7 +29,7 @@ export const chatService = {
     onError: (err: Error) => void
   ): Promise<void> {
     const token = await AsyncStorage.getItem('@anaska_access_token');
-    const url = `${API_BASE_URL}/api/chat/stream`;
+    const url = `${getApiBaseUrl()}/api/chat/stream`;
 
     try {
       const response = await fetch(url, {
