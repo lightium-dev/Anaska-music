@@ -84,9 +84,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     title: 'Neural Hyperdrive - Vol. 4',
     artist: 'Kavinsky • Muse AI • 132 BPM',
     genreId: 'synthwave',
-    audioUrl: 'https://cdn.freesound.org/previews/612/612627_5674468-lq.mp3',
+    audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
     coverUrl: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=800&auto=format&fit=crop&q=80',
-    duration: 215,
+    duration: 372,
   };
 
   const isHeroPlaying = currentTrack?.id === heroTrack.id && isPlaying;

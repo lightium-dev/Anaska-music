@@ -40,12 +40,17 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       set({ isLoading: true, currentTrack: track, progress: 0, currentTime: 0 });
 
       try {
-        await setAudioModeAsync({
-          playsInSilentMode: true,
-          shouldPlayInBackground: true,
-          interruptionMode: 'mixWithOthers',
-        });
+        try {
+          await setAudioModeAsync({
+            playsInSilentMode: true,
+            shouldPlayInBackground: true,
+            interruptionMode: 'mixWithOthers',
+          });
+        } catch (modeErr) {
+          console.warn('[Audio Mode Notice]:', modeErr);
+        }
 
+        console.log('[Anaska Player] Playing stream:', targetTrack.title, targetTrack.audioUrl);
         const player = createAudioPlayer(targetTrack.audioUrl, { updateInterval: 250 });
 
         player.addListener('playbackStatusUpdate', (status: AudioStatus) => {
@@ -74,7 +79,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
           duration: targetTrack.duration,
         });
       } catch (err) {
-        console.error('Error loading audio:', err);
+        console.error('[Anaska Player] Error loading audio:', err);
         set({ isLoading: false, isPlaying: false });
       }
     } else if (state.soundObject) {
