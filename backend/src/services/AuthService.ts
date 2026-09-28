@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { pool } from '../db';
@@ -88,11 +89,13 @@ export class AuthService {
     }
 
     const passwordHash = await this.hashPassword(data.password);
+    const userId = crypto.randomUUID();
     const result = await pool.query<UserRecord>(
-      `INSERT INTO users (username, email, password_hash, genre_preferences)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO users (id, username, email, password_hash, genre_preferences)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING id, username, email, avatar, genre_preferences, created_at`,
       [
+        userId,
         data.username,
         data.email.toLowerCase(),
         passwordHash,

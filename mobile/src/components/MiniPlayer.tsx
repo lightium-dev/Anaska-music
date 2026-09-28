@@ -98,7 +98,7 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({ onPress, bottomOffset })
 const styles = StyleSheet.create({
   wrapper: {
     position: 'absolute',
-    bottom: 88, // Lifted comfortably above the custom bottom tab bar and DJ Muse halo
+    bottom: 112, // Lifted comfortably above the custom bottom tab bar and DJ Muse halo
     left: 10,
     right: 10,
     backgroundColor: 'rgba(11, 19, 43, 0.95)',

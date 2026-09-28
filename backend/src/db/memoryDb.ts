@@ -37,7 +37,7 @@ export async function getOrCreateMemoryDb(): Promise<{ db: IMemoryDb; pool: any 
   // Schema creation
   db.public.none(`
     CREATE TABLE IF NOT EXISTS users (
-        id text PRIMARY KEY,
+        id text PRIMARY KEY DEFAULT gen_random_uuid(),
         username varchar(50) UNIQUE NOT NULL,
         email varchar(255) UNIQUE NOT NULL,
         password_hash varchar(255) NOT NULL,
@@ -64,13 +64,13 @@ export async function getOrCreateMemoryDb(): Promise<{ db: IMemoryDb; pool: any 
     );
 
     CREATE TABLE IF NOT EXISTS chat_sessions (
-        id text PRIMARY KEY,
+        id text PRIMARY KEY DEFAULT gen_random_uuid(),
         user_id text NOT NULL,
         started_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS chat_messages (
-        id text PRIMARY KEY,
+        id text PRIMARY KEY DEFAULT gen_random_uuid(),
         session_id text NOT NULL,
         role varchar(20) NOT NULL,
         content text NOT NULL,
@@ -78,7 +78,7 @@ export async function getOrCreateMemoryDb(): Promise<{ db: IMemoryDb; pool: any 
     );
 
     CREATE TABLE IF NOT EXISTS music_knowledge (
-        id text PRIMARY KEY,
+        id text PRIMARY KEY DEFAULT gen_random_uuid(),
         title varchar(255) NOT NULL,
         artist varchar(255),
         genre varchar(100),

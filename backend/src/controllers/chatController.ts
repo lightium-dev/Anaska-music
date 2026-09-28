@@ -5,7 +5,7 @@ import { AuthenticatedRequest } from '../middlewares/authMiddleware';
 
 const chatMessageSchema = z.object({
   message: z.string().min(1).max(2000),
-  sessionId: z.string().uuid().optional(),
+  sessionId: z.string().optional().nullable(),
 });
 
 export const streamChat = async (
@@ -23,7 +23,7 @@ export const streamChat = async (
     const { message, sessionId: providedSessionId } = chatMessageSchema.parse(req.body);
 
     let session;
-    if (providedSessionId) {
+    if (providedSessionId && providedSessionId !== 'local' && providedSessionId !== 'temp') {
       session = { id: providedSessionId, user_id: userId, started_at: new Date() };
     } else {
       session = await aiAssistantService.getOrCreateSession(userId);

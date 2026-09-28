@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="freezeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E0F2FE"/>
+      <stop offset="40%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#0284C7"/>
+    </linearGradient>
+    <linearGradient id="iceSpike" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0369A1" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#67E8F9" stop-opacity="0.95"/>
+    </linearGradient>
+    <filter id="frostGlow" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="128" fill="#070B14"/>
+  <rect x="8" y="8" width="496" height="496" rx="120" stroke="url(#freezeGrad)" stroke-width="2" stroke-opacity="0.3"/>
+  <g filter="url(#frostGlow)">
+    <!-- Angular crystalline frosted 'A' monogram -->
+    <path d="M256 88 L124 384 H192 L228 300 H284 L320 384 H388 L256 88Z" fill="none" stroke="url(#freezeGrad)" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Glacial acoustic audio spikes / icicle waveform crossbar -->
+    <line x1="186" y1="268" x2="186" y2="330" stroke="url(#iceSpike)" stroke-width="11" stroke-linecap="round"/>
+    <line x1="221" y1="236" x2="221" y2="362" stroke="#38BDF8" stroke-width="12" stroke-linecap="round"/>
+    <line x1="256" y1="210" x2="256" y2="386" stroke="#E0F2FE" stroke-width="14" stroke-linecap="round"/>
+    <line x1="291" y1="236" x2="291" y2="362" stroke="#38BDF8" stroke-width="12" stroke-linecap="round"/>
+    <line x1="326" y1="268" x2="326" y2="330" stroke="url(#iceSpike)" stroke-width="11" stroke-linecap="round"/>
+    <!-- Crystalline frost spark apex -->
+    <polygon points="256,76 262,88 274,88 264,96 268,108 256,100 244,108 248,96 238,88 250,88" fill="#E0F2FE"/>
+  </g>
+</svg>

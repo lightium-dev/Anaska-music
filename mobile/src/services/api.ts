@@ -1,6 +1,29 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { NativeModules, Platform } from 'react-native';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000';
+function resolveApiBaseUrl(): string {
+  // 1. Explicit environment variable
+  const envUrl = process.env.EXPO_PUBLIC_API_URL;
+  if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
+    return envUrl;
+  }
+
+  // 2. In Expo/React Native, extract host IP from bundle scriptURL
+  try {
+    const scriptURL: string | undefined = NativeModules.SourceCode?.scriptURL;
+    if (scriptURL) {
+      const match = scriptURL.match(/https?:\/\/([^:/]+)/);
+      if (match && match[1] && match[1] !== 'localhost' && match[1] !== '127.0.0.1') {
+        return `http://${match[1]}:5000`;
+      }
+    }
+  } catch {}
+
+  // 3. Fallback
+  return envUrl || (Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000');
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 export async function apiRequest<T>(
   endpoint: string,

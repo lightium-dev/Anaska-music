@@ -169,7 +169,7 @@ function MainWithPlayer({ navigation }: any) {
       {currentTrack && !isAISection && (
         <MiniPlayer
           onPress={() => navigation.navigate('PlayerModal')}
-          bottomOffset={bottomTabBarHeight + 22}
+          bottomOffset={bottomTabBarHeight + 42}
         />
       )}
     </View>

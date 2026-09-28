@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Audio } from 'expo-av';
+import { createAudioPlayer, setAudioModeAsync, AudioPlayer, AudioStatus } from 'expo-audio';
 import { Track } from '../types';
 
 interface PlayerState {
@@ -8,7 +8,7 @@ interface PlayerState {
   progress: number; // 0 to 1
   currentTime: number; // in seconds
   duration: number; // in seconds
-  soundObject: Audio.Sound | null;
+  soundObject: AudioPlayer | null;
   isLoading: boolean;
   play: (track?: Track) => Promise<void>;
   pause: () => Promise<void>;
@@ -34,46 +34,51 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     // If changing track
     if (track && (!state.currentTrack || state.currentTrack.id !== track.id)) {
       if (state.soundObject) {
-        await state.soundObject.unloadAsync();
+        state.soundObject.remove();
       }
 
       set({ isLoading: true, currentTrack: track, progress: 0, currentTime: 0 });
 
       try {
-        await Audio.setAudioModeAsync({
-          playsInSilentModeIOS: true,
-          staysActiveInBackground: true,
-          shouldDuckAndroid: true,
+        await setAudioModeAsync({
+          playsInSilentMode: true,
+          shouldPlayInBackground: true,
+          interruptionMode: 'mixWithOthers',
         });
 
-        const { sound } = await Audio.Sound.createAsync(
-          { uri: targetTrack.audioUrl },
-          { shouldPlay: true },
-          (status) => {
-            if (status.isLoaded) {
-              const dur = status.durationMillis ? status.durationMillis / 1000 : targetTrack.duration;
-              const pos = status.positionMillis / 1000;
-              set({
-                currentTime: pos,
-                duration: dur,
-                progress: dur > 0 ? pos / dur : 0,
-                isPlaying: status.isPlaying,
-              });
+        const player = createAudioPlayer(targetTrack.audioUrl, { updateInterval: 250 });
 
-              if (status.didJustFinish) {
-                set({ isPlaying: false, progress: 1 });
-              }
+        player.addListener('playbackStatusUpdate', (status: AudioStatus) => {
+          if (status.isLoaded) {
+            const dur = status.duration > 0 ? status.duration : targetTrack.duration;
+            const pos = status.currentTime;
+            set({
+              currentTime: pos,
+              duration: dur,
+              progress: dur > 0 ? pos / dur : 0,
+              isPlaying: status.playing,
+            });
+
+            if (status.didJustFinish) {
+              set({ isPlaying: false, progress: 1 });
             }
           }
-        );
+        });
 
-        set({ soundObject: sound, isPlaying: true, isLoading: false, duration: targetTrack.duration });
+        player.play();
+
+        set({
+          soundObject: player,
+          isPlaying: true,
+          isLoading: false,
+          duration: targetTrack.duration,
+        });
       } catch (err) {
         console.error('Error loading audio:', err);
         set({ isLoading: false, isPlaying: false });
       }
     } else if (state.soundObject) {
-      await state.soundObject.playAsync();
+      state.soundObject.play();
       set({ isPlaying: true });
     }
   },
@@ -81,7 +86,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   pause: async () => {
     const { soundObject } = get();
     if (soundObject) {
-      await soundObject.pauseAsync();
+      soundObject.pause();
       set({ isPlaying: false });
     }
   },
@@ -99,9 +104,9 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     const { soundObject, duration } = get();
     const clamped = Math.max(0, Math.min(1, progressPercent));
     if (soundObject && duration > 0) {
-      const positionMillis = clamped * duration * 1000;
-      await soundObject.setPositionAsync(positionMillis);
-      set({ progress: clamped, currentTime: clamped * duration });
+      const positionSeconds = clamped * duration;
+      await soundObject.seekTo(positionSeconds);
+      set({ progress: clamped, currentTime: positionSeconds });
     }
   },
 }));

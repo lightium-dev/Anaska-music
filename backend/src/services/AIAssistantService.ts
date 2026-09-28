@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { Response } from 'express';
 import { pool } from '../db';
 
@@ -26,9 +27,10 @@ export class AIAssistantService {
       return existing.rows[0];
     }
 
+    const sessionId = crypto.randomUUID();
     const created = await pool.query<ChatSessionRecord>(
-      'INSERT INTO chat_sessions (user_id) VALUES ($1) RETURNING id, user_id, started_at',
-      [userId]
+      'INSERT INTO chat_sessions (id, user_id) VALUES ($1, $2) RETURNING id, user_id, started_at',
+      [sessionId, userId]
     );
     return created.rows[0];
   }
@@ -46,9 +48,10 @@ export class AIAssistantService {
     role: 'user' | 'assistant' | 'system',
     content: string
   ): Promise<ChatMessageRecord> {
+    const messageId = crypto.randomUUID();
     const res = await pool.query<ChatMessageRecord>(
-      'INSERT INTO chat_messages (session_id, role, content) VALUES ($1, $2, $3) RETURNING id, session_id, role, content, created_at',
-      [sessionId, role, content]
+      'INSERT INTO chat_messages (id, session_id, role, content) VALUES ($1, $2, $3, $4) RETURNING id, session_id, role, content, created_at',
+      [messageId, sessionId, role, content]
     );
     return res.rows[0];
   }
@@ -94,52 +97,203 @@ export class AIAssistantService {
     return [knowledgeSnippet, trackRecommendations].filter(Boolean).join('\n\n');
   }
 
+  private async generateRealAIReply(
+    userMessage: string,
+    chatHistory: ChatMessageRecord[],
+    ragContext: string
+  ): Promise<string | null> {
+    const geminiKey = process.env.GEMINI_API_KEY;
+    const openaiKey = process.env.OPENAI_API_KEY;
+    const groqKey = process.env.GROQ_API_KEY;
+
+    if (!geminiKey && !openaiKey && !groqKey) {
+      return null;
+    }
+
+    const systemPrompt = `You are DJ Muse, the hyper-intelligent, stylish, neural AI music curator and companion in the Anaska music streaming application.
+You speak with a cool, modern, evocative tone (cyberpunk aesthetic, crisp, friendly, engaging, audio-savvy).
+You discuss music genres (synthwave, lo-fi, ambient cryo, techno, electronic, jazz, etc.), sound textures, frequencies, moods, BPM, and artists.
+You can recommend music, explain musical composition, or vibe with the listener.
+Keep responses concise, conversational, and punchy (1 to 3 short paragraphs max unless asked for a deep dive).
+
+${ragContext ? `Catalog knowledge & track context from Anaska library:\n${ragContext}` : ''}`;
+
+    // 1. Try Gemini if configured
+    if (geminiKey) {
+      try {
+        const contents: any[] = [];
+        const recent = chatHistory.slice(-6);
+        for (const m of recent) {
+          contents.push({
+            role: m.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: m.content }],
+          });
+        }
+        contents.push({
+          role: 'user',
+          parts: [{ text: userMessage }],
+        });
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`;
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            system_instruction: {
+              parts: [{ text: systemPrompt }],
+            },
+            contents,
+            generationConfig: {
+              temperature: 0.7,
+              maxOutputTokens: 600,
+            },
+          }),
+        });
+
+        if (response.ok) {
+          const data: any = await response.json();
+          const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (candidateText) return candidateText;
+        } else {
+          console.warn('[DJ Muse] Gemini API error status:', response.status);
+        }
+      } catch (err) {
+        console.warn('[DJ Muse] Gemini call failed, falling back:', err);
+      }
+    }
+
+    // 2. Try OpenAI if configured
+    if (openaiKey) {
+      try {
+        const messages: any[] = [{ role: 'system', content: systemPrompt }];
+        const recent = chatHistory.slice(-6);
+        for (const m of recent) {
+          messages.push({
+            role: m.role === 'assistant' ? 'assistant' : 'user',
+            content: m.content,
+          });
+        }
+        messages.push({ role: 'user', content: userMessage });
+
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${openaiKey}`,
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            messages,
+            temperature: 0.7,
+            max_tokens: 600,
+          }),
+        });
+
+        if (response.ok) {
+          const data: any = await response.json();
+          const reply = data.choices?.[0]?.message?.content;
+          if (reply) return reply;
+        } else {
+          console.warn('[DJ Muse] OpenAI API error status:', response.status);
+        }
+      } catch (err) {
+        console.warn('[DJ Muse] OpenAI call failed, falling back:', err);
+      }
+    }
+
+    // 3. Try Groq if configured
+    if (groqKey) {
+      try {
+        const messages: any[] = [{ role: 'system', content: systemPrompt }];
+        const recent = chatHistory.slice(-6);
+        for (const m of recent) {
+          messages.push({
+            role: m.role === 'assistant' ? 'assistant' : 'user',
+            content: m.content,
+          });
+        }
+        messages.push({ role: 'user', content: userMessage });
+
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${groqKey}`,
+          },
+          body: JSON.stringify({
+            model: 'llama-3.1-8b-instant',
+            messages,
+            temperature: 0.7,
+            max_tokens: 600,
+          }),
+        });
+
+        if (response.ok) {
+          const data: any = await response.json();
+          const reply = data.choices?.[0]?.message?.content;
+          if (reply) return reply;
+        } else {
+          console.warn('[DJ Muse] Groq API error status:', response.status);
+        }
+      } catch (err) {
+        console.warn('[DJ Muse] Groq call failed, falling back:', err);
+      }
+    }
+
+    return null;
+  }
+
   async streamResponse(
     sessionId: string,
     userMessage: string,
     res: Response
   ): Promise<void> {
-    // 1. Save user message to database
+    // 1. Fetch previous session history
+    const history = await this.getSessionMessages(sessionId);
+
+    // 2. Save user message to database
     await this.saveMessage(sessionId, 'user', userMessage);
 
-    // 2. Fetch context via RAG
+    // 3. Fetch context via RAG
     const ragContext = await this.getContext(userMessage);
 
-    // 3. Set SSE HTTP headers
+    // 4. Set SSE HTTP headers
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.flushHeaders?.();
 
-    // 4. Generate intelligent DJ Muse response
-    let museReply = '';
-    const q = userMessage.toLowerCase();
+    // 5. Generate intelligent DJ Muse response (Real LLM or curated fallback)
+    let museReply: string | null = await this.generateRealAIReply(userMessage, history, ragContext);
 
-    if (q.includes('recommend') || q.includes('suggest') || q.includes('track') || q.includes('song')) {
-      museReply = `Hey there! 🎧 DJ Muse here with your sonic prescription. Based on our catalog, check out:\n\n${
-        ragContext || '• "Neon Horizon" by Cyberpulse (Synthwave)\n• "Rainy Cafe Study" by Coffee & Rain (Lo-Fi Chill)'
-      }\n\nSink into the groove and let me know how that resonates!`;
-    } else if (q.includes('lofi') || q.includes('chill') || q.includes('study')) {
-      museReply = `Ah, craving that cozy warmth! ☕ Lo-fi hip hop combines tape-hiss warmth with jazzy chords designed for focus and calm. I suggest throwing on "Rainy Cafe Study" or "Golden Hour Dreams".`;
-    } else if (q.includes('synthwave') || q.includes('retro') || q.includes('80s')) {
-      museReply = `Turn the headlights on! 🏎️💨 Synthwave draws from 80s arcade nostalgia and lush analog synthesizers. Check out "Neon Horizon" by Cyberpulse or "Midnight Drive" by Vector Runner!`;
-    } else if (q.includes('who are you') || q.includes('dj muse')) {
-      museReply = `I am DJ Muse, your personal AI music curator in Anaska! 🎵 I can provide track recommendations, dive into music trivia, or match playlists to your current mood. What vibe are you after today?`;
-    } else {
-      museReply = `That's an interesting musical thought! ${
-        ragContext ? `Here's a cool nugget from our archives:\n${ragContext}\n\n` : ''
-      }I'm here to match you with sounds that elevate your flow. Want some synthwave rhythms or chill lo-fi beats?`;
+    if (!museReply) {
+      const q = userMessage.toLowerCase();
+      if (q.includes('recommend') || q.includes('suggest') || q.includes('track') || q.includes('song')) {
+        museReply = `Hey there! 🎧 DJ Muse here with your sonic prescription. Based on our catalog, check out:\n\n${
+          ragContext || '• "Neon Horizon" by Cyberpulse (Synthwave)\n• "Rainy Cafe Study" by Coffee & Rain (Lo-Fi Chill)'
+        }\n\nSink into the groove and let me know how that resonates!`;
+      } else if (q.includes('lofi') || q.includes('chill') || q.includes('study')) {
+        museReply = `Ah, craving that cozy warmth! ☕ Lo-fi hip hop combines tape-hiss warmth with jazzy chords designed for focus and calm. I suggest throwing on "Rainy Cafe Study" or "Golden Hour Dreams".`;
+      } else if (q.includes('synthwave') || q.includes('retro') || q.includes('80s')) {
+        museReply = `Turn the headlights on! 🏎️💨 Synthwave draws from 80s arcade nostalgia and lush analog synthesizers. Check out "Neon Horizon" by Cyberpulse or "Midnight Drive" by Vector Runner!`;
+      } else if (q.includes('who are you') || q.includes('dj muse')) {
+        museReply = `I am DJ Muse, your personal AI music curator in Anaska! 🎵 I can provide track recommendations, dive into music trivia, or match playlists to your current mood. What vibe are you after today?`;
+      } else {
+        museReply = `That's an interesting musical thought! ${
+          ragContext ? `Here's a cool nugget from our archives:\n${ragContext}\n\n` : ''
+        }I'm here to match you with sounds that elevate your flow. Want some synthwave rhythms or chill lo-fi beats?`;
+      }
     }
 
-    // 5. Stream words/tokens via SSE with realistic chunking
+    // 6. Stream words/tokens via SSE with realistic chunking
     const chunks = museReply.match(/\S+\s*/g) || [museReply];
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i];
       res.write(`data: ${JSON.stringify({ chunk, done: false })}\n\n`);
-      await new Promise((resolve) => setTimeout(resolve, 35));
+      await new Promise((resolve) => setTimeout(resolve, 25));
     }
 
-    // 6. Save assistant message to DB & signal completion
+    // 7. Save assistant message to DB & signal completion
     await this.saveMessage(sessionId, 'assistant', museReply);
     res.write(`data: ${JSON.stringify({ chunk: '', done: true, fullResponse: museReply })}\n\n`);
     res.end();
