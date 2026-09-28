@@ -14,9 +14,21 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { colors, spacing, borderRadius } from '../constants/theme';
 import { useUserStore } from '../store/userStore';
 import { apiRequest } from '../services/api';
+
+const isCustomAvatar = (uri?: string): boolean => {
+  if (!uri) return false;
+  return (
+    uri.startsWith('http://') ||
+    uri.startsWith('https://') ||
+    uri.startsWith('file:') ||
+    uri.startsWith('content:') ||
+    uri.startsWith('data:')
+  );
+};
 
 const AVATAR_PRESETS = [
   {
@@ -90,6 +102,34 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
     }
   };
 
+  const pickImageFromDevice = async () => {
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert(
+          'Photo Library Access Required',
+          'Please allow storage permissions to select a photo from your phone.'
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.85,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const localUri = result.assets[0].uri;
+        await handleSaveAvatar(localUri);
+      }
+    } catch (e: any) {
+      console.warn('Image picker error:', e);
+      Alert.alert('Error', 'Unable to pick image from internal storage.');
+    }
+  };
+
   const handleLogout = () => {
     Alert.alert('Log Out', 'Are you sure you want to log out of Anaska?', [
       { text: 'Cancel', style: 'cancel' },
@@ -142,7 +182,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
             >
               <Image
                 source={
-                  user?.avatar && user.avatar.startsWith('http')
+                  user?.avatar && isCustomAvatar(user.avatar)
                     ? { uri: user.avatar }
                     : require('../../assets/avatar.png')
                 }
@@ -255,7 +295,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
               <View style={styles.miniAvatarWrapper}>
                 <Image
                   source={
-                    user?.avatar && user.avatar.startsWith('http')
+                    user?.avatar && isCustomAvatar(user.avatar)
                       ? { uri: user.avatar }
                       : require('../../assets/avatar.png')
                   }
@@ -356,6 +396,23 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} style={styles.modalScroll}>
+              {/* Choose from Phone Storage */}
+              <TouchableOpacity
+                style={styles.devicePickButton}
+                onPress={pickImageFromDevice}
+                activeOpacity={0.85}
+              >
+                <LinearGradient
+                  colors={['#00F2FE', '#38BDF8']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.devicePickGradient}
+                >
+                  <Ionicons name="images" size={18} color="#002022" />
+                  <Text style={styles.devicePickText}>Choose from Phone Storage</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+
               <Text style={styles.modalSectionLabel}>PRESET SONIC PERSONAS</Text>
               <View style={styles.presetsGrid}>
                 {AVATAR_PRESETS.map((item) => {
@@ -839,6 +896,31 @@ const styles = StyleSheet.create({
   },
   modalScroll: {
     marginTop: spacing.xs,
+  },
+  devicePickButton: {
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+    marginBottom: spacing.md,
+    marginTop: 4,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  devicePickGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  devicePickText: {
+    color: '#002022',
+    fontWeight: '800',
+    fontSize: 13,
+    letterSpacing: 0.2,
   },
   modalSectionLabel: {
     color: colors.secondary,

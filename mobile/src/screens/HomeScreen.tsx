@@ -133,7 +133,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             <View style={styles.avatarButton}>
               <Image
                 source={
-                  user?.avatar && user.avatar.startsWith('http')
+                  user?.avatar && (user.avatar.startsWith('http') || user.avatar.startsWith('file:') || user.avatar.startsWith('content:') || user.avatar.startsWith('data:'))
                     ? { uri: user.avatar }
                     : require('../../assets/avatar.png')
                 }

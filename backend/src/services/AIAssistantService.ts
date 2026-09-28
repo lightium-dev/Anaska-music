@@ -106,11 +106,12 @@ export class AIAssistantService {
     const openaiKey = process.env.OPENAI_API_KEY;
     const groqKey = process.env.GROQ_API_KEY;
 
-    const systemPrompt = `You are DJ Muse, the hyper-intelligent, stylish, neural AI music curator and companion in the Anaska music streaming application.
-You speak with a cool, modern, evocative tone (cyberpunk aesthetic, crisp, friendly, engaging, audio-savvy).
-You discuss music genres (synthwave, lo-fi, ambient cryo, techno, electronic, jazz, etc.), sound textures, frequencies, moods, BPM, and artists.
-You can recommend music, explain musical composition, or vibe with the listener.
-Keep responses concise, conversational, and punchy (1 to 3 short paragraphs max unless asked for a deep dive).
+    const systemPrompt = `You are DJ Muse, the hyper-intelligent, stylish AI music curator in the Anaska music streaming app.
+CRITICAL FORMATTING INSTRUCTIONS:
+- NEVER use Markdown syntax. No bold asterisks (no **word**), no italic asterisks (*word*), no hashtags/headers (#, ##), no bullet points (-, *), and no backticks.
+- Reply ONLY in clean, conversational, spoken sentences like a real human DJ or companion speaking live through a radio headset.
+- Use natural punctuation and emojis (🎧, ⚡, 🎵, 🏎️, ✨) to set the mood.
+- Keep answers engaging, punchy, concise, and direct (1 to 2 short paragraphs max).
 
 ${ragContext ? `Catalog knowledge & track context from Anaska library:\n${ragContext}` : ''}`;
 
@@ -149,7 +150,7 @@ ${ragContext ? `Catalog knowledge & track context from Anaska library:\n${ragCon
         if (response.ok) {
           const data: any = await response.json();
           const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (candidateText) return candidateText;
+          if (candidateText) return this.cleanPlainSpeech(candidateText);
         } else {
           console.warn('[DJ Muse] Gemini API error status:', response.status);
         }
@@ -188,7 +189,7 @@ ${ragContext ? `Catalog knowledge & track context from Anaska library:\n${ragCon
         if (response.ok) {
           const data: any = await response.json();
           const reply = data.choices?.[0]?.message?.content;
-          if (reply) return reply;
+          if (reply) return this.cleanPlainSpeech(reply);
         } else {
           console.warn('[DJ Muse] OpenAI API error status:', response.status);
         }
@@ -227,7 +228,7 @@ ${ragContext ? `Catalog knowledge & track context from Anaska library:\n${ragCon
         if (response.ok) {
           const data: any = await response.json();
           const reply = data.choices?.[0]?.message?.content;
-          if (reply) return reply;
+          if (reply) return this.cleanPlainSpeech(reply);
         } else {
           console.warn('[DJ Muse] Groq API error status:', response.status);
         }
@@ -262,7 +263,7 @@ ${ragContext ? `Catalog knowledge & track context from Anaska library:\n${ragCon
       if (response.ok) {
         const text = await response.text();
         if (text && text.trim().length > 0) {
-          return text.trim();
+          return this.cleanPlainSpeech(text.trim());
         }
       }
     } catch (err) {
@@ -270,6 +271,17 @@ ${ragContext ? `Catalog knowledge & track context from Anaska library:\n${ragCon
     }
 
     return null;
+  }
+
+  private cleanPlainSpeech(text: string): string {
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '$1')   // Remove bold **
+      .replace(/\*(.*?)\*/g, '$1')       // Remove italic *
+      .replace(/#{1,6}\s+/g, '')         // Remove headers #
+      .replace(/^\s*[-*•]\s+/gm, '')     // Remove list bullet points
+      .replace(/`([^`]+)`/g, '$1')       // Remove backticks
+      .replace(/\n{3,}/g, '\n\n')        // Normalize excess line breaks
+      .trim();
   }
 
   async streamResponse(
@@ -304,19 +316,19 @@ ${ragContext ? `Catalog knowledge & track context from Anaska library:\n${ragCon
     if (!museReply) {
       const q = userMessage.toLowerCase();
       if (q.includes('recommend') || q.includes('suggest') || q.includes('track') || q.includes('song')) {
-        museReply = `Hey there! 🎧 DJ Muse here with your sonic prescription. Based on our catalog, check out:\n\n${ragContext || '• "Neon Horizon" by Cyberpulse (Synthwave)\n• "Rainy Cafe Study" by Coffee & Rain (Lo-Fi Chill)'
-          }\n\nSink into the groove and let me know how that resonates!`;
+        museReply = `Hey there! 🎧 DJ Muse here with your sonic prescription. Check out Neon Horizon by Cyberpulse for high-octane synthwave, or Rainy Cafe Study by Coffee and Rain for ambient calm. Let the frequencies flow and tell me which vibe suits your session today!`;
       } else if (q.includes('lofi') || q.includes('chill') || q.includes('study')) {
-        museReply = `Ah, craving that cozy warmth! ☕ Lo-fi hip hop combines tape-hiss warmth with jazzy chords designed for focus and calm. I suggest throwing on "Rainy Cafe Study" or "Golden Hour Dreams".`;
+        museReply = `Craving that tape-hiss warmth? ☕ Lo-fi hip hop pairs gentle jazzy progressions with dust and vinyl crackle to keep you centered. Tune into Rainy Cafe Study or Golden Hour Dreams.`;
       } else if (q.includes('synthwave') || q.includes('retro') || q.includes('80s')) {
-        museReply = `Turn the headlights on! 🏎️💨 Synthwave draws from 80s arcade nostalgia and lush analog synthesizers. Check out "Neon Horizon" by Cyberpulse or "Midnight Drive" by Vector Runner!`;
+        museReply = `Turn the headlights on! 🏎️💨 Synthwave channels neon nightscapes and analog synthesizers straight from the 80s arcade era. Fire up Neon Horizon by Cyberpulse or Midnight Drive by Vector Runner!`;
       } else if (q.includes('who are you') || q.includes('dj muse')) {
         museReply = `I am DJ Muse, your personal AI music curator in Anaska! 🎵 I can provide track recommendations, dive into music trivia, or match playlists to your current mood. What vibe are you after today?`;
       } else {
-        museReply = `That's an interesting musical thought! ${ragContext ? `Here's a cool nugget from our archives:\n${ragContext}\n\n` : ''
-          }I'm here to match you with sounds that elevate your flow. Want some synthwave rhythms or chill lo-fi beats?`;
+        museReply = `That is an inspiring sound thought! 🎧 I am dialed in to match your energy with music that elevates your session. Want to cruise with some uptempo synthwave or sink into warm lo-fi chords?`;
       }
     }
+
+    museReply = this.cleanPlainSpeech(museReply);
 
     // 6. Stream words/tokens via SSE with realistic chunking
     const chunks = museReply.match(/\S+\s*/g) || [museReply];

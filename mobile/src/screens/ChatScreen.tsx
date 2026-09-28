@@ -201,9 +201,9 @@ export const ChatScreen: React.FC = () => {
             title: 'Cyber Drift Vol. 1',
             artist: 'DJ Muse AI Curated',
             genreId: 'synthwave',
-            audioUrl: 'https://cdn.freesound.org/previews/682/682633_11861866-lq.mp3',
+            audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
             coverUrl: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=600&auto=format&fit=crop&q=80',
-            duration: 240,
+            duration: 372,
           });
         }}
         activeOpacity={0.85}

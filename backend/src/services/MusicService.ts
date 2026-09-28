@@ -74,10 +74,74 @@ export class MusicService {
     `;
 
     const res = await pool.query<TrackRecord>(queryStr, values);
-    return { tracks: res.rows, total };
+    let tracks = res.rows;
+
+    // If searching, also search live streaming catalog (Audius open music network)
+    if (filter?.search && filter.search.trim().length > 1) {
+      try {
+        const audiusRes = await fetch(
+          `https://discoveryprovider.audius.co/v1/tracks/search?query=${encodeURIComponent(
+            filter.search.trim()
+          )}&app_name=ANASKA&limit=15`,
+          { signal: AbortSignal.timeout(3500) }
+        );
+
+        if (audiusRes.ok) {
+          const json: any = await audiusRes.json();
+          const liveTracks: TrackRecord[] = (json.data || []).map((t: any) => ({
+            id: `audius-${t.id}`,
+            title: t.title,
+            artist: t.user?.name || 'Independent Artist',
+            genre_id: filter.genreId || 'electronic',
+            audio_url: `https://discoveryprovider.audius.co/v1/tracks/${t.id}/stream?app_name=ANASKA`,
+            cover_url:
+              t.artwork?.['480x480'] ||
+              t.artwork?.['150x150'] ||
+              'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&auto=format&fit=crop&q=80',
+            duration: t.duration || 180,
+            created_at: new Date(),
+          }));
+
+          tracks = [...tracks, ...liveTracks];
+        }
+      } catch (e) {
+        // Fallback gracefully to database tracks on network hiccup
+      }
+    }
+
+    return { tracks, total: tracks.length };
   }
 
   async getTrackById(id: string): Promise<TrackRecord | null> {
+    if (id.startsWith('audius-')) {
+      const audiusId = id.replace('audius-', '');
+      try {
+        const res = await fetch(
+          `https://discoveryprovider.audius.co/v1/tracks/${audiusId}?app_name=ANASKA`,
+          { signal: AbortSignal.timeout(3000) }
+        );
+        if (res.ok) {
+          const json: any = await res.json();
+          const t = json.data;
+          if (t) {
+            return {
+              id,
+              title: t.title,
+              artist: t.user?.name || 'Independent Artist',
+              genre_id: 'electronic',
+              audio_url: `https://discoveryprovider.audius.co/v1/tracks/${audiusId}/stream?app_name=ANASKA`,
+              cover_url:
+                t.artwork?.['480x480'] ||
+                t.artwork?.['150x150'] ||
+                'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&auto=format&fit=crop&q=80',
+              duration: t.duration || 180,
+              created_at: new Date(),
+            };
+          }
+        }
+      } catch {}
+    }
+
     const res = await pool.query<TrackRecord>(
       'SELECT id, title, artist, genre_id, audio_url, cover_url, duration, created_at FROM tracks WHERE id = $1',
       [id]
