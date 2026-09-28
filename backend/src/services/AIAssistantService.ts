@@ -106,10 +106,6 @@ export class AIAssistantService {
     const openaiKey = process.env.OPENAI_API_KEY;
     const groqKey = process.env.GROQ_API_KEY;
 
-    if (!geminiKey && !openaiKey && !groqKey) {
-      return null;
-    }
-
     const systemPrompt = `You are DJ Muse, the hyper-intelligent, stylish, neural AI music curator and companion in the Anaska music streaming application.
 You speak with a cool, modern, evocative tone (cyberpunk aesthetic, crisp, friendly, engaging, audio-savvy).
 You discuss music genres (synthwave, lo-fi, ambient cryo, techno, electronic, jazz, etc.), sound textures, frequencies, moods, BPM, and artists.
@@ -238,6 +234,39 @@ ${ragContext ? `Catalog knowledge & track context from Anaska library:\n${ragCon
       } catch (err) {
         console.warn('[DJ Muse] Groq call failed, falling back:', err);
       }
+    }
+
+    // 4. Default zero-config Real AI (Free high-performance GPT-4 endpoint)
+    try {
+      const messages: any[] = [{ role: 'system', content: systemPrompt }];
+      const recent = chatHistory.slice(-6);
+      for (const m of recent) {
+        messages.push({
+          role: m.role === 'assistant' ? 'assistant' : 'user',
+          content: m.content,
+        });
+      }
+      messages.push({ role: 'user', content: userMessage });
+
+      const response = await fetch('https://text.pollinations.ai/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages,
+          model: 'openai',
+          seed: Math.floor(Math.random() * 10000),
+        }),
+        signal: AbortSignal.timeout(15000),
+      });
+
+      if (response.ok) {
+        const text = await response.text();
+        if (text && text.trim().length > 0) {
+          return text.trim();
+        }
+      }
+    } catch (err) {
+      console.warn('[DJ Muse] Free AI provider call failed, falling back to heuristics:', err);
     }
 
     return null;
