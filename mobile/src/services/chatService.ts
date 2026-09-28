@@ -25,7 +25,7 @@ export const chatService = {
     message: string,
     sessionId: string | undefined,
     onChunk: (chunk: string) => void,
-    onComplete: (fullText: string) => void,
+    onComplete: (fullText: string, playlist?: any) => void,
     onError: (err: Error) => void
   ): Promise<void> {
     const token = await AsyncStorage.getItem('@anaska_access_token');
@@ -50,6 +50,7 @@ export const chatService = {
       const text = await response.text();
       const lines = text.split('\n\n');
       let full = '';
+      let playlist: any = undefined;
 
       for (const rawLine of lines) {
         const line = rawLine.trim();
@@ -64,6 +65,9 @@ export const chatService = {
             }
             if (data.done) {
               full = data.fullResponse || full;
+              if (data.playlist) {
+                playlist = data.playlist;
+              }
             }
           } catch {
             // Ignore partial/comment frames (e.g. : ping)
@@ -71,7 +75,7 @@ export const chatService = {
         }
       }
 
-      onComplete(full);
+      onComplete(full, playlist);
     } catch (err: any) {
       console.error('Chat stream error:', err);
       onError(err);

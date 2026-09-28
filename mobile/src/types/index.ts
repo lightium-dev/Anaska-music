@@ -22,12 +22,21 @@ export interface Track {
   duration: number; // in seconds
 }
 
+export interface PlaylistAction {
+  type: 'playlist' | 'play_track' | 'recommendations';
+  title: string;
+  description?: string;
+  tracks: Track[];
+  autoPlay?: boolean;
+}
+
 export interface ChatMessage {
   id: string;
   sessionId: string;
   role: 'user' | 'assistant';
   content: string;
   createdAt: string;
+  playlist?: PlaylistAction;
 }
 
 export interface ChatSession {

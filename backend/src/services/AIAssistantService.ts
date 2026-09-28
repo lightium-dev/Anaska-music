@@ -16,6 +16,22 @@ export interface ChatMessageRecord {
   created_at: Date;
 }
 
+export interface PlaylistAction {
+  type: 'playlist' | 'play_track' | 'recommendations';
+  title: string;
+  description: string;
+  tracks: Array<{
+    id: string;
+    title: string;
+    artist: string;
+    genreId: string;
+    audioUrl: string;
+    coverUrl: string;
+    duration: number;
+  }>;
+  autoPlay: boolean;
+}
+
 export class AIAssistantService {
   async getOrCreateSession(userId: string): Promise<ChatSessionRecord> {
     const existing = await pool.query<ChatSessionRecord>(
@@ -83,7 +99,7 @@ export class AIAssistantService {
       const tRes = await pool.query(
         `SELECT title, artist, genre_id FROM tracks 
          WHERE LOWER(title) LIKE $1 OR LOWER(artist) LIKE $1 OR LOWER(genre_id) LIKE $1 
-         LIMIT 3`,
+         LIMIT 4`,
         [searchTerms]
       );
 
@@ -97,23 +113,137 @@ export class AIAssistantService {
     return [knowledgeSnippet, trackRecommendations].filter(Boolean).join('\n\n');
   }
 
+  async detectMusicIntentAndCurate(userMessage: string): Promise<PlaylistAction | null> {
+    const q = userMessage.toLowerCase();
+    const isPlayDirect = /\b(play|start|listen|spin|hear|put on|stream)\b/i.test(q);
+    const isPlaylistIntent = /\b(playlist|mix|set|collection|tracks|songs|queue|make|create|curate|vibe|recommend)\b/i.test(q);
+
+    if (!isPlayDirect && !isPlaylistIntent) {
+      return null;
+    }
+
+    let genreFilter: string[] = [];
+    let titleQuery = '';
+    let playlistTitle = 'Curated Neural Flow';
+    let playlistDesc = 'Bespoke frequencies compiled by DJ Muse';
+
+    if (q.includes('metal') || q.includes('industrial') || q.includes('heavy')) {
+      genreFilter = ['metal'];
+      playlistTitle = '⚡ Cyberpunk Heavy Metal Flow';
+      playlistDesc = 'Distorted guitars, industrial basslines, and relentless energy';
+    } else if (q.includes('rock') || q.includes('grunge') || q.includes('indie')) {
+      genreFilter = ['rock'];
+      playlistTitle = '🎸 Electric Overdrive Rock Set';
+      playlistDesc = 'Driving riffs, punchy acoustics, and alternative grit';
+    } else if (q.includes('synthwave') || q.includes('retro') || q.includes('80s') || q.includes('neon')) {
+      genreFilter = ['synthwave'];
+      playlistTitle = '🏎️ Neon Cyber Horizon Mix';
+      playlistDesc = 'Outrun analog synths and midnight highway grooves';
+    } else if (
+      q.includes('lofi') ||
+      q.includes('lo-fi') ||
+      q.includes('chill') ||
+      q.includes('study') ||
+      q.includes('relax') ||
+      q.includes('sleep') ||
+      q.includes('coffee')
+    ) {
+      genreFilter = ['lofi'];
+      playlistTitle = '☕ Rainy Cafe Lo-Fi Study Room';
+      playlistDesc = 'Mellow tape saturation and warm jazzy progressions';
+    } else if (q.includes('ambient') || q.includes('focus') || q.includes('cryo') || q.includes('drone')) {
+      genreFilter = ['ambient'];
+      playlistTitle = '🌌 Deep Starlight Atmospheric Focus';
+      playlistDesc = 'Zero-gravity pads and glacial soundscapes';
+    } else if (q.includes('electronic') || q.includes('dance') || q.includes('club') || q.includes('techno') || q.includes('edm')) {
+      genreFilter = ['electronic'];
+      playlistTitle = '🔊 Sub-Zero Digital Voltage';
+      playlistDesc = 'Kinetic rhythms and high-frequency synth drops';
+    } else if (q.includes('hiphop') || q.includes('hip-hop') || q.includes('rap') || q.includes('trap')) {
+      genreFilter = ['hiphop'];
+      playlistTitle = '🔥 Metropolis 808 Cypher';
+      playlistDesc = 'Heavy low-end punch and smooth rhythmic flows';
+    } else {
+      // Check for specific track mentions
+      const tracksAll = await pool.query('SELECT title FROM tracks');
+      for (const row of tracksAll.rows) {
+        if (q.includes(row.title.toLowerCase())) {
+          titleQuery = row.title.toLowerCase();
+          playlistTitle = `🎵 Track Spotlight: ${row.title}`;
+          playlistDesc = `Selected stream tuned to your request`;
+          break;
+        }
+      }
+    }
+
+    let tracksQuery = '';
+    let params: any[] = [];
+
+    if (titleQuery) {
+      tracksQuery = `SELECT id, title, artist, genre_id, audio_url, cover_url, duration FROM tracks WHERE LOWER(title) LIKE $1 LIMIT 5`;
+      params = [`%${titleQuery}%`];
+    } else if (genreFilter.length > 0) {
+      tracksQuery = `SELECT id, title, artist, genre_id, audio_url, cover_url, duration FROM tracks WHERE genre_id = ANY($1) ORDER BY RANDOM() LIMIT 5`;
+      params = [genreFilter];
+    } else {
+      tracksQuery = `SELECT id, title, artist, genre_id, audio_url, cover_url, duration FROM tracks ORDER BY RANDOM() LIMIT 5`;
+      params = [];
+    }
+
+    try {
+      const res = await pool.query(tracksQuery, params);
+      if (res.rowCount && res.rowCount > 0) {
+        const formattedTracks = res.rows.map((r: any) => ({
+          id: r.id,
+          title: r.title,
+          artist: r.artist,
+          genreId: r.genre_id,
+          audioUrl: r.audio_url,
+          coverUrl: r.cover_url,
+          duration: r.duration,
+        }));
+
+        return {
+          type: isPlayDirect ? 'play_track' : 'playlist',
+          title: playlistTitle,
+          description: playlistDesc,
+          tracks: formattedTracks,
+          autoPlay: isPlayDirect,
+        };
+      }
+    } catch (err) {
+      console.warn('[DJ Muse] Curate tracks error:', err);
+    }
+
+    return null;
+  }
+
   private async generateRealAIReply(
     userMessage: string,
     chatHistory: ChatMessageRecord[],
-    ragContext: string
+    ragContext: string,
+    curatedPlaylist: PlaylistAction | null
   ): Promise<string | null> {
     const geminiKey = process.env.GEMINI_API_KEY;
     const openaiKey = process.env.OPENAI_API_KEY;
     const groqKey = process.env.GROQ_API_KEY;
 
+    let playlistContext = '';
+    if (curatedPlaylist) {
+      playlistContext = `\nYou have generated a playlist for the user named "${curatedPlaylist.title}" with tracks:\n` +
+        curatedPlaylist.tracks.map((t) => `- "${t.title}" by ${t.artist}`).join('\n') +
+        `\nInform the user you crafted this playlist and they can tap Play to listen immediately!`;
+    }
+
     const systemPrompt = `You are DJ Muse, the hyper-intelligent, stylish AI music curator in the Anaska music streaming app.
 CRITICAL FORMATTING INSTRUCTIONS:
 - NEVER use Markdown syntax. No bold asterisks (no **word**), no italic asterisks (*word*), no hashtags/headers (#, ##), no bullet points (-, *), and no backticks.
 - Reply ONLY in clean, conversational, spoken sentences like a real human DJ or companion speaking live through a radio headset.
-- Use natural punctuation and emojis (🎧, ⚡, 🎵, 🏎️, ✨) to set the mood.
+- Use natural punctuation and emojis (🎧, ⚡, 🎵, 🎸, ☕, 🏎️, ✨) to set the mood.
 - Keep answers engaging, punchy, concise, and direct (1 to 2 short paragraphs max).
 
-${ragContext ? `Catalog knowledge & track context from Anaska library:\n${ragContext}` : ''}`;
+${ragContext ? `Catalog knowledge & track context from Anaska library:\n${ragContext}` : ''}
+${playlistContext}`;
 
     // 1. Try Gemini if configured
     if (geminiKey) {
@@ -151,8 +281,6 @@ ${ragContext ? `Catalog knowledge & track context from Anaska library:\n${ragCon
           const data: any = await response.json();
           const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text;
           if (candidateText) return this.cleanPlainSpeech(candidateText);
-        } else {
-          console.warn('[DJ Muse] Gemini API error status:', response.status);
         }
       } catch (err) {
         console.warn('[DJ Muse] Gemini call failed, falling back:', err);
@@ -190,8 +318,6 @@ ${ragContext ? `Catalog knowledge & track context from Anaska library:\n${ragCon
           const data: any = await response.json();
           const reply = data.choices?.[0]?.message?.content;
           if (reply) return this.cleanPlainSpeech(reply);
-        } else {
-          console.warn('[DJ Muse] OpenAI API error status:', response.status);
         }
       } catch (err) {
         console.warn('[DJ Muse] OpenAI call failed, falling back:', err);
@@ -229,15 +355,13 @@ ${ragContext ? `Catalog knowledge & track context from Anaska library:\n${ragCon
           const data: any = await response.json();
           const reply = data.choices?.[0]?.message?.content;
           if (reply) return this.cleanPlainSpeech(reply);
-        } else {
-          console.warn('[DJ Muse] Groq API error status:', response.status);
         }
       } catch (err) {
         console.warn('[DJ Muse] Groq call failed, falling back:', err);
       }
     }
 
-    // 4. Default zero-config Real AI (Free high-performance GPT-4 endpoint)
+    // 4. Zero-config fallback (Fast high performance endpoint)
     try {
       const messages: any[] = [{ role: 'system', content: systemPrompt }];
       const recent = chatHistory.slice(-6);
@@ -257,7 +381,7 @@ ${ragContext ? `Catalog knowledge & track context from Anaska library:\n${ragCon
           model: 'openai',
           seed: Math.floor(Math.random() * 10000),
         }),
-        signal: AbortSignal.timeout(15000),
+        signal: AbortSignal.timeout(10000),
       });
 
       if (response.ok) {
@@ -267,7 +391,7 @@ ${ragContext ? `Catalog knowledge & track context from Anaska library:\n${ragCon
         }
       }
     } catch (err) {
-      console.warn('[DJ Muse] Free AI provider call failed, falling back to heuristics:', err);
+      console.warn('[DJ Muse] Free AI provider call timed out, falling back to heuristics');
     }
 
     return null;
@@ -295,52 +419,68 @@ ${ragContext ? `Catalog knowledge & track context from Anaska library:\n${ragCon
     // 2. Save user message to database
     await this.saveMessage(sessionId, 'user', userMessage);
 
-    // 3. Fetch context via RAG
+    // 3. Detect music intent and curate playlist/track
+    const curatedPlaylist = await this.detectMusicIntentAndCurate(userMessage);
+
+    // 4. Fetch context via RAG
     const ragContext = await this.getContext(userMessage);
 
-    // 4. Set SSE HTTP headers
+    // 5. Set SSE HTTP headers
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.flushHeaders?.();
     res.write(': ping\n\n');
 
-    // 5. Generate intelligent DJ Muse response (Real LLM or curated fallback)
+    // 6. Generate intelligent DJ Muse response (Real LLM or curated fallback)
     let museReply: string | null = null;
     try {
-      museReply = await this.generateRealAIReply(userMessage, history, ragContext);
+      museReply = await this.generateRealAIReply(userMessage, history, ragContext, curatedPlaylist);
     } catch (e) {
       console.warn('[DJ Muse] AI reply generation error:', e);
     }
 
     if (!museReply) {
       const q = userMessage.toLowerCase();
-      if (q.includes('recommend') || q.includes('suggest') || q.includes('track') || q.includes('song')) {
-        museReply = `Hey there! 🎧 DJ Muse here with your sonic prescription. Check out Neon Horizon by Cyberpulse for high-octane synthwave, or Rainy Cafe Study by Coffee and Rain for ambient calm. Let the frequencies flow and tell me which vibe suits your session today!`;
-      } else if (q.includes('lofi') || q.includes('chill') || q.includes('study')) {
-        museReply = `Craving that tape-hiss warmth? ☕ Lo-fi hip hop pairs gentle jazzy progressions with dust and vinyl crackle to keep you centered. Tune into Rainy Cafe Study or Golden Hour Dreams.`;
+      if (curatedPlaylist) {
+        if (curatedPlaylist.autoPlay) {
+          museReply = `Dialing in ${curatedPlaylist.title} for you right now! 🎧 I loaded up the queue so you can dive straight into the session. Let the frequencies move you!`;
+        } else {
+          museReply = `I crafted a bespoke set for you: ${curatedPlaylist.title}! 🎵 It is loaded with ${curatedPlaylist.tracks.length} tracks tuned to your vibe. Tap Play Entire Playlist below to launch!`;
+        }
+      } else if (q.includes('metal') || q.includes('industrial')) {
+        museReply = `Charging up the heavy frequencies! ⚡ Industrial guitars, double-kick rhythms, and digital overdrive are ready to power your session. Check out Cyberpunk Industrial Metal and Monolith Peak.`;
+      } else if (q.includes('rock') || q.includes('grunge')) {
+        museReply = `Cranking up the analog overdrive! 🎸 Echoes of Velocity and Rebel Ignition bring raw guitar energy and live percussion to your stream.`;
       } else if (q.includes('synthwave') || q.includes('retro') || q.includes('80s')) {
         museReply = `Turn the headlights on! 🏎️💨 Synthwave channels neon nightscapes and analog synthesizers straight from the 80s arcade era. Fire up Neon Horizon by Cyberpulse or Midnight Drive by Vector Runner!`;
-      } else if (q.includes('who are you') || q.includes('dj muse')) {
-        museReply = `I am DJ Muse, your personal AI music curator in Anaska! 🎵 I can provide track recommendations, dive into music trivia, or match playlists to your current mood. What vibe are you after today?`;
+      } else if (q.includes('lofi') || q.includes('chill') || q.includes('study')) {
+        museReply = `Craving that tape-hiss warmth? ☕ Lo-fi hip hop pairs gentle jazzy progressions with dust and vinyl crackle to keep you centered. Tune into Rainy Cafe Study or Golden Hour Dreams.`;
       } else {
-        museReply = `That is an inspiring sound thought! 🎧 I am dialed in to match your energy with music that elevates your session. Want to cruise with some uptempo synthwave or sink into warm lo-fi chords?`;
+        museReply = `I am dialed in and ready! 🎧 Tell me any mood, genre, or artist, or ask me to play a track or create a custom playlist and I will synthesize it for you on the spot!`;
       }
     }
 
     museReply = this.cleanPlainSpeech(museReply);
 
-    // 6. Stream words/tokens via SSE with realistic chunking
+    // 7. Stream words/tokens via SSE with realistic chunking
     const chunks = museReply.match(/\S+\s*/g) || [museReply];
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i];
       res.write(`data: ${JSON.stringify({ chunk, done: false })}\n\n`);
-      await new Promise((resolve) => setTimeout(resolve, 25));
+      await new Promise((resolve) => setTimeout(resolve, 20));
     }
 
-    // 7. Save assistant message to DB & signal completion
+    // 8. Save assistant message to DB & signal completion with playlist payload
     await this.saveMessage(sessionId, 'assistant', museReply);
-    res.write(`data: ${JSON.stringify({ chunk: '', done: true, fullResponse: museReply })}\n\n`);
+    res.write(
+      `data: ${JSON.stringify({
+        chunk: '',
+        done: true,
+        fullResponse: museReply,
+        playlist: curatedPlaylist,
+      })}\n\n`
+    );
     res.end();
   }
 }

@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
   logoRingWrapper: {
     width: 84,
     height: 84,
-    borderRadius: 42,
+    borderRadius: 22,
     borderWidth: 1.5,
     borderColor: 'rgba(0, 242, 254, 0.4)',
     alignItems: 'center',
@@ -374,15 +374,15 @@ const styles = StyleSheet.create({
   },
   logoGlow: {
     position: 'absolute',
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 74,
+    height: 74,
+    borderRadius: 18,
     backgroundColor: 'rgba(0, 242, 254, 0.25)',
   },
   logoImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 64,
+    height: 64,
+    borderRadius: 16,
   },
   brandTitle: {
     color: colors.textPrimary,
