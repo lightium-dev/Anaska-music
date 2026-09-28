@@ -25,9 +25,16 @@ import { MiniPlayer } from '../components/MiniPlayer';
 const Tab = createBottomTabNavigator();
 const RootStack = createNativeStackNavigator();
 
-function CustomTabBar({ state, descriptors, navigation }: any) {
+function CustomTabBar({ state, descriptors, navigation, onTabChange }: any) {
   const insets = useSafeAreaInsets();
   const safeBottom = Math.max(insets.bottom, Platform.OS === 'android' ? 16 : 12);
+  const activeRouteName = state.routes[state.index]?.name;
+
+  useEffect(() => {
+    if (activeRouteName && onTabChange) {
+      onTabChange(activeRouteName);
+    }
+  }, [activeRouteName, onTabChange]);
 
   return (
     <View style={[styles.tabBarContainer, { paddingBottom: safeBottom }]}>
@@ -125,11 +132,19 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
   );
 }
 
-function MainTabs() {
+function MainTabs({ onTabChange }: { onTabChange: (tabName: string) => void }) {
   return (
     <Tab.Navigator
-      tabBar={(props) => <CustomTabBar {...props} />}
+      tabBar={(props) => <CustomTabBar {...props} onTabChange={onTabChange} />}
       screenOptions={{ headerShown: false }}
+      screenListeners={{
+        state: (e: any) => {
+          const routeName = e.data?.state?.routes?.[e.data?.state?.index]?.name;
+          if (routeName && onTabChange) {
+            onTabChange(routeName);
+          }
+        },
+      }}
     >
       <Tab.Screen name="HomeTab" component={HomeScreen} />
       <Tab.Screen name="SearchTab" component={SearchScreen} />
@@ -141,14 +156,17 @@ function MainTabs() {
 
 function MainWithPlayer({ navigation }: any) {
   const { currentTrack } = usePlayerStore();
+  const [currentTab, setCurrentTab] = useState('HomeTab');
   const insets = useSafeAreaInsets();
   const safeBottom = Math.max(insets.bottom, Platform.OS === 'android' ? 16 : 12);
   const bottomTabBarHeight = 56 + safeBottom;
 
+  const isAISection = currentTab === 'ChatTab';
+
   return (
     <View style={styles.flexContainer}>
-      <MainTabs />
-      {currentTrack && (
+      <MainTabs onTabChange={setCurrentTab} />
+      {currentTrack && !isAISection && (
         <MiniPlayer
           onPress={() => navigation.navigate('PlayerModal')}
           bottomOffset={bottomTabBarHeight + 22}
