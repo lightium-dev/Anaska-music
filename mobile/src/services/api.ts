@@ -50,5 +50,3 @@ export async function apiRequest<T>(
 
   return response.json();
 }
-
-export { API_BASE_URL };
