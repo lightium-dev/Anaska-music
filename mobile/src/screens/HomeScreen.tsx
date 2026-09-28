@@ -8,9 +8,11 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
+  ImageBackground,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing } from '../constants/theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { colors, spacing, borderRadius } from '../constants/theme';
 import { musicService } from '../services/musicService';
 import { usePlayerStore } from '../store/playerStore';
 import { useUserStore } from '../store/userStore';
@@ -20,10 +22,20 @@ interface HomeScreenProps {
   navigation: any;
 }
 
+const FILTER_TAGS = [
+  'All',
+  'Sub-Zero Beats',
+  'Arctic Chill',
+  'Glacial Bass',
+  'Frost Trance',
+  'Synthwave',
+];
+
 export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const { user } = useUserStore();
-  const { play, currentTrack, isPlaying } = usePlayerStore();
+  const { play, pause, currentTrack, isPlaying } = usePlayerStore();
 
+  const [activeFilter, setActiveFilter] = useState('All');
   const [genres, setGenres] = useState<Genre[]>([]);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,6 +66,31 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     fetchData();
   }, []);
 
+  // Filtered tracks
+  const filteredTracks = tracks.filter((t) => {
+    if (activeFilter === 'All') return true;
+    if (activeFilter === 'Synthwave') return t.genreId === 'synthwave';
+    if (activeFilter === 'Sub-Zero Beats' || activeFilter === 'Glacial Bass') {
+      return t.genreId === 'electronic' || t.genreId === 'hiphop';
+    }
+    if (activeFilter === 'Arctic Chill' || activeFilter === 'Frost Trance') {
+      return t.genreId === 'ambient' || t.genreId === 'lofi';
+    }
+    return true;
+  });
+
+  const heroTrack = tracks[0] || {
+    id: 'hero-1',
+    title: 'Neural Hyperdrive - Vol. 4',
+    artist: 'Kavinsky • Muse AI • 132 BPM',
+    genreId: 'synthwave',
+    audioUrl: 'https://cdn.freesound.org/previews/612/612627_5674468-lq.mp3',
+    coverUrl: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=800&auto=format&fit=crop&q=80',
+    duration: 215,
+  };
+
+  const isHeroPlaying = currentTrack?.id === heroTrack.id && isPlaying;
+
   if (loading) {
     return (
       <View style={[styles.container, styles.center]}>
@@ -62,93 +99,326 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     );
   }
 
-  // Filter or group tracks
-  const userPreferredGenres = user?.genrePreferences || [];
-
   return (
     <View style={styles.container}>
+      {/* Top Header */}
+      <View style={styles.header}>
+        <View style={styles.headerBrandRow}>
+          <Image
+            source={require('../../assets/logo.png')}
+            style={styles.headerLogo}
+            resizeMode="contain"
+          />
+          <Text style={styles.headerBrandText}>Anaska</Text>
+        </View>
+
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.museBadge}
+            onPress={() => navigation.navigate('ChatTab')}
+            activeOpacity={0.8}
+          >
+            <View style={styles.pulseSpark}>
+              <View style={styles.pulseInner} />
+            </View>
+            <Text style={styles.museBadgeText}>MUSE ACTIVE</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.avatarButton}
+            onPress={() => navigation.navigate('ProfileTab')}
+            activeOpacity={0.8}
+          >
+            <Image
+              source={require('../../assets/avatar.png')}
+              style={styles.avatarImg}
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
+
       <ScrollView
         contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+          />
+        }
+        showsVerticalScrollIndicator={false}
       >
-        {/* Top Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>Good vibes,</Text>
-            <Text style={styles.username}>{user?.username || 'Music Explorer'}</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.museButton}
-            onPress={() => navigation.navigate('ChatTab')}
+        {/* User Session Greeting */}
+        <View style={styles.greetingSection}>
+          <Text style={styles.greetingMeta}>GLACIAL NIGHT SESSION</Text>
+          <Text style={styles.greetingTitle}>
+            Good evening, {user?.username || 'Alex'}
+          </Text>
+        </View>
+
+        {/* Mood & Genre Filter Pills */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterRow}
+        >
+          {FILTER_TAGS.map((tag) => {
+            const isActive = activeFilter === tag;
+            return (
+              <TouchableOpacity
+                key={tag}
+                onPress={() => setActiveFilter(tag)}
+                activeOpacity={0.8}
+                style={[styles.filterChip, isActive && styles.filterChipActive]}
+              >
+                {isActive ? (
+                  <LinearGradient
+                    colors={['#00F2FE', '#38BDF8']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.filterChipGradient}
+                  >
+                    <Text style={styles.filterChipTextActive}>{tag}</Text>
+                  </LinearGradient>
+                ) : (
+                  <View style={styles.filterChipContent}>
+                    <Text style={styles.filterChipTextInactive}>{tag}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
+        {/* AI-Curated Hero Card: Neural Hyperdrive */}
+        <View style={styles.heroCardOuter}>
+          <ImageBackground
+            source={{ uri: heroTrack.coverUrl }}
+            style={styles.heroImageBg}
+            imageStyle={{ borderRadius: borderRadius.lg }}
           >
-            <Ionicons name="sparkles" size={16} color="#000000" />
-            <Text style={styles.museButtonText}>DJ Muse</Text>
+            <LinearGradient
+              colors={['rgba(7, 11, 20, 0.2)', 'rgba(7, 11, 20, 0.75)', '#070B14']}
+              style={styles.heroScrim}
+            >
+              <View style={styles.heroBadge}>
+                <Ionicons name="snow-outline" size={13} color={colors.primary} />
+                <Text style={styles.heroBadgeText}>SYNTHESIZED FOR YOUR MOOD</Text>
+              </View>
+
+              <View style={styles.heroBottomRow}>
+                <View style={styles.heroTextCol}>
+                  <Text style={styles.heroSub}>AI Curated Focus</Text>
+                  <Text style={styles.heroTitle} numberOfLines={1}>
+                    {heroTrack.title}
+                  </Text>
+                  <Text style={styles.heroMeta} numberOfLines={1}>
+                    {heroTrack.artist} • Cryo Mix
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.heroPlayOrb}
+                  onPress={() => {
+                    if (isHeroPlaying) {
+                      pause();
+                    } else {
+                      play(heroTrack);
+                    }
+                  }}
+                  activeOpacity={0.85}
+                >
+                  <LinearGradient
+                    colors={['#00F2FE', '#38BDF8', '#E0F2FE']}
+                    style={styles.heroPlayGradient}
+                  >
+                    <Ionicons
+                      name={isHeroPlaying ? 'pause' : 'play'}
+                      size={28}
+                      color="#002022"
+                      style={{ marginLeft: isHeroPlaying ? 0 : 3 }}
+                    />
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            </LinearGradient>
+          </ImageBackground>
+        </View>
+
+        {/* DJ Muse Interactive Hub Banner */}
+        <TouchableOpacity
+          style={styles.museHubCard}
+          onPress={() => navigation.navigate('ChatTab')}
+          activeOpacity={0.85}
+        >
+          <LinearGradient
+            colors={['#0E1829', '#142135']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.museHubGradient}
+          >
+            <View style={styles.museHubIconCircle}>
+              <MaterialCommunityIcons name="waveform" size={22} color={colors.primary} />
+            </View>
+
+            <View style={styles.museHubTextCol}>
+              <Text style={styles.museHubTitle}>DJ Muse Interactive Hub</Text>
+              <Text style={styles.museHubSubtitle}>Say “Play sub-zero ambient frost”</Text>
+            </View>
+
+            <View style={styles.museHubPromptButton}>
+              <Ionicons name="mic-outline" size={14} color={colors.textFrost} />
+              <Text style={styles.museHubPromptText}>Prompt</Text>
+            </View>
+          </LinearGradient>
+        </TouchableOpacity>
+
+        {/* Recommended for You Horizontal Carousel */}
+        <View style={styles.sectionHeader}>
+          <View>
+            <Text style={styles.sectionTitle}>Recommended for You</Text>
+            <Text style={styles.sectionSubtitle}>Glacial flow curated from your timeline</Text>
+          </View>
+          <TouchableOpacity activeOpacity={0.7} style={styles.exploreLink}>
+            <Text style={styles.exploreText}>Explore</Text>
+            <Ionicons name="chevron-forward" size={14} color={colors.primary} />
           </TouchableOpacity>
         </View>
 
-        {/* Featured Banner */}
-        <TouchableOpacity
-          style={styles.banner}
-          activeOpacity={0.9}
-          onPress={() => navigation.navigate('ChatTab')}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.carouselContainer}
         >
-          <View style={styles.bannerContent}>
-            <Text style={styles.bannerBadge}>AI CURATOR</Text>
-            <Text style={styles.bannerTitle}>Talk with DJ Muse</Text>
-            <Text style={styles.bannerSubtitle}>
-              Ask for music trivia, mood-based playlists, or explore synthetic sounds.
-            </Text>
+          {tracks.slice(0, 5).map((track, idx) => {
+            const isThisPlaying = currentTrack?.id === track.id && isPlaying;
+            const tagLabels = ['AMBIENT', 'ARCTIC', 'CHILLWAVE', 'GLACIER', 'HYPERION'];
+            return (
+              <TouchableOpacity
+                key={track.id}
+                style={styles.carouselCard}
+                onPress={() => play(track)}
+                activeOpacity={0.85}
+              >
+                <View style={styles.carouselArtWrapper}>
+                  <Image source={{ uri: track.coverUrl }} style={styles.carouselArt} />
+                  <View style={styles.carouselTag}>
+                    <Text style={styles.carouselTagText}>
+                      {tagLabels[idx % tagLabels.length]}
+                    </Text>
+                  </View>
+
+                  <View
+                    style={[
+                      styles.carouselPlayButton,
+                      isThisPlaying && styles.carouselPlayButtonActive,
+                    ]}
+                  >
+                    <Ionicons
+                      name={isThisPlaying ? 'pause' : 'play'}
+                      size={18}
+                      color="#002022"
+                      style={{ marginLeft: isThisPlaying ? 0 : 2 }}
+                    />
+                  </View>
+                </View>
+
+                <Text style={styles.carouselTrackTitle} numberOfLines={1}>
+                  {track.title}
+                </Text>
+                <Text style={styles.carouselTrackArtist} numberOfLines={1}>
+                  {track.artist}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
+        {/* Heavy Rotation & Flow: Vertical Playlist */}
+        <View style={styles.sectionHeader}>
+          <View>
+            <Text style={styles.sectionTitle}>Heavy Rotation & Flow</Text>
+            <Text style={styles.sectionSubtitle}>Tracks fueling your daily algorithms</Text>
           </View>
-          <Ionicons name="chatbubbles" size={44} color={colors.primary} />
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.tuneButton} activeOpacity={0.7}>
+            <Ionicons name="options-outline" size={18} color={colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
 
-        {/* Dynamic Groups by Genre */}
-        {genres.map((g) => {
-          const genreTracks = tracks.filter((t) => t.genreId === g.id);
-          if (genreTracks.length === 0) return null;
+        <View style={styles.trackListCol}>
+          {filteredTracks.map((track, index) => {
+            const isSelected = currentTrack?.id === track.id;
+            const isThisPlaying = isSelected && isPlaying;
 
-          return (
-            <View key={g.id} style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>{g.name}</Text>
-                {userPreferredGenres.includes(g.id) && (
-                  <Text style={styles.forYouBadge}>FOR YOU</Text>
-                )}
-              </View>
+            const formatDuration = (sec: number) => {
+              const m = Math.floor(sec / 60);
+              const s = sec % 60;
+              return `${m}:${s < 10 ? '0' : ''}${s}`;
+            };
 
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
-                {genreTracks.map((t) => {
-                  const isCurrent = currentTrack?.id === t.id;
-                  return (
-                    <TouchableOpacity
-                      key={t.id}
-                      style={styles.trackCard}
-                      activeOpacity={0.8}
-                      onPress={() => play(t)}
-                    >
-                      <View style={styles.coverWrapper}>
-                        <Image source={{ uri: t.coverUrl }} style={styles.trackCover} />
-                        <View style={[styles.playOverlay, isCurrent && isPlaying && styles.playingOverlay]}>
-                          <Ionicons
-                            name={isCurrent && isPlaying ? 'pause' : 'play'}
-                            size={20}
-                            color="#000000"
-                          />
-                        </View>
-                      </View>
-                      <Text style={[styles.trackTitle, isCurrent && styles.activeText]} numberOfLines={1}>
-                        {t.title}
-                      </Text>
-                      <Text style={styles.trackArtist} numberOfLines={1}>
-                        {t.artist}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
-            </View>
-          );
-        })}
+            return (
+              <TouchableOpacity
+                key={track.id}
+                style={[styles.trackRow, isSelected && styles.trackRowSelected]}
+                onPress={() => {
+                  if (isSelected && isPlaying) {
+                    pause();
+                  } else {
+                    play(track);
+                  }
+                }}
+                activeOpacity={0.8}
+              >
+                {/* Index or Animated Equalizer */}
+                <View style={styles.trackIndexCol}>
+                  {isThisPlaying ? (
+                    <View style={styles.equalizerBars}>
+                      <View style={[styles.bar, { height: 10 }]} />
+                      <View style={[styles.bar, { height: 16 }]} />
+                      <View style={[styles.bar, { height: 12 }]} />
+                    </View>
+                  ) : (
+                    <Text style={styles.trackIndexText}>
+                      {index + 1 < 10 ? `0${index + 1}` : index + 1}
+                    </Text>
+                  )}
+                </View>
+
+                {/* Album Thumbnail */}
+                <View style={[styles.trackThumbWrapper, isSelected && styles.trackThumbActive]}>
+                  <Image source={{ uri: track.coverUrl }} style={styles.trackThumb} />
+                </View>
+
+                {/* Title & Artist */}
+                <View style={styles.trackInfoCol}>
+                  <Text
+                    style={[styles.trackTitleText, isSelected && styles.trackTitleTextActive]}
+                    numberOfLines={1}
+                  >
+                    {track.title}
+                  </Text>
+                  <Text style={styles.trackArtistText} numberOfLines={1}>
+                    {track.artist}
+                  </Text>
+                </View>
+
+                {/* Duration */}
+                <Text
+                  style={[styles.trackDurationText, isSelected && styles.trackDurationActive]}
+                >
+                  {formatDuration(track.duration)}
+                </Text>
+
+                <TouchableOpacity
+                  style={styles.trackMenuButton}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Ionicons name="ellipsis-vertical" size={16} color={colors.textSecondary} />
+                </TouchableOpacity>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </ScrollView>
     </View>
   );
@@ -163,147 +433,462 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  scroll: {
-    padding: spacing.md,
-    paddingTop: 50,
-    paddingBottom: 110,
-  },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.lg,
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl + 10,
+    paddingBottom: spacing.sm,
+    backgroundColor: 'rgba(7, 11, 20, 0.95)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 242, 254, 0.1)',
   },
-  greeting: {
-    color: colors.textSecondary,
-    fontSize: 14,
+  headerBrandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
-  username: {
+  headerLogo: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+  },
+  headerBrandText: {
     color: colors.textPrimary,
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 19,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
-  museButton: {
+  headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.primary,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 20,
+    gap: 10,
+  },
+  museBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 6,
-  },
-  museButtonText: {
-    color: '#000000',
-    fontWeight: 'bold',
-    fontSize: 13,
-  },
-  banner: {
-    backgroundColor: colors.surfaceElevated,
-    borderRadius: 16,
-    padding: spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.xl,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: borderRadius.pill,
+    backgroundColor: 'rgba(14, 24, 42, 0.9)',
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: 'rgba(0, 242, 254, 0.3)',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
   },
-  bannerContent: {
-    flex: 1,
-    marginRight: spacing.md,
+  pulseSpark: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: colors.primary,
   },
-  bannerBadge: {
+  pulseInner: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 3.5,
+    backgroundColor: colors.primary,
+  },
+  museBadgeText: {
     color: colors.primary,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+  },
+  avatarButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: 'rgba(0, 242, 254, 0.4)',
+    overflow: 'hidden',
+  },
+  avatarImg: {
+    width: '100%',
+    height: '100%',
+  },
+  scroll: {
+    paddingBottom: 140,
+  },
+  greetingSection: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+  },
+  greetingMeta: {
+    color: colors.secondary,
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 1.5,
     marginBottom: 4,
   },
-  bannerTitle: {
+  greetingTitle: {
     color: colors.textPrimary,
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
+    fontSize: 24,
+    fontWeight: '800',
+    letterSpacing: -0.5,
   },
-  bannerSubtitle: {
+  filterRow: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    gap: 8,
+  },
+  filterChip: {
+    borderRadius: borderRadius.pill,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(28, 44, 62, 0.8)',
+    backgroundColor: '#0E1829',
+  },
+  filterChipActive: {
+    borderColor: 'rgba(224, 242, 254, 0.4)',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  filterChipGradient: {
+    paddingHorizontal: 16,
+    paddingVertical: 7,
+    borderRadius: borderRadius.pill,
+  },
+  filterChipContent: {
+    paddingHorizontal: 16,
+    paddingVertical: 7,
+  },
+  filterChipTextActive: {
+    color: '#002022',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  filterChipTextInactive: {
     color: colors.textSecondary,
     fontSize: 12,
-    lineHeight: 16,
+    fontWeight: '500',
   },
-  section: {
-    marginBottom: spacing.xl,
+  heroCardOuter: {
+    marginHorizontal: spacing.lg,
+    marginVertical: spacing.sm,
+    borderRadius: borderRadius.lg,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 242, 254, 0.25)',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 6,
+  },
+  heroImageBg: {
+    width: '100%',
+    height: 200,
+  },
+  heroScrim: {
+    flex: 1,
+    justifyContent: 'space-between',
+    padding: spacing.md,
+  },
+  heroBadge: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: borderRadius.pill,
+    backgroundColor: 'rgba(7, 11, 20, 0.85)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 242, 254, 0.35)',
+  },
+  heroBadgeText: {
+    color: colors.textFrost,
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  heroBottomRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+  },
+  heroTextCol: {
+    flex: 1,
+    marginRight: spacing.md,
+  },
+  heroSub: {
+    color: colors.primary,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+  heroTitle: {
+    color: colors.textPrimary,
+    fontSize: 18,
+    fontWeight: '800',
+    marginVertical: 2,
+  },
+  heroMeta: {
+    color: colors.textSecondary,
+    fontSize: 12,
+  },
+  heroPlayOrb: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    overflow: 'hidden',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.7,
+    shadowRadius: 18,
+    elevation: 8,
+  },
+  heroPlayGradient: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  museHubCard: {
+    marginHorizontal: spacing.lg,
+    marginVertical: spacing.xs,
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 242, 254, 0.2)',
+  },
+  museHubGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    gap: 12,
+  },
+  museHubIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 242, 254, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 242, 254, 0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  museHubTextCol: {
+    flex: 1,
+  },
+  museHubTitle: {
+    color: colors.textPrimary,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  museHubSubtitle: {
+    color: colors.textSecondary,
+    fontSize: 11,
+    marginTop: 2,
+  },
+  museHubPromptButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: borderRadius.pill,
+    backgroundColor: '#1A2B45',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 242, 254, 0.35)',
+  },
+  museHubPromptText: {
+    color: colors.textFrost,
+    fontSize: 11,
+    fontWeight: '600',
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.md,
-    gap: 8,
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
   },
   sectionTitle: {
     color: colors.textPrimary,
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '700',
   },
-  forYouBadge: {
-    backgroundColor: colors.surface,
-    color: colors.primaryAccent,
-    fontSize: 10,
-    fontWeight: 'bold',
+  sectionSubtitle: {
+    color: colors.textSecondary,
+    fontSize: 11,
+    marginTop: 2,
+  },
+  exploreLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  exploreText: {
+    color: colors.primary,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  tuneButton: {
+    padding: 4,
+  },
+  carouselContainer: {
+    paddingHorizontal: spacing.lg,
+    gap: 14,
+  },
+  carouselCard: {
+    width: 140,
+  },
+  carouselArtWrapper: {
+    width: 140,
+    height: 140,
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+    backgroundColor: '#0E1829',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 242, 254, 0.2)',
+    marginBottom: 6,
+    position: 'relative',
+  },
+  carouselArt: {
+    width: '100%',
+    height: '100%',
+  },
+  carouselTag: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 4,
+    borderRadius: borderRadius.pill,
+    backgroundColor: 'rgba(7, 11, 20, 0.85)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 242, 254, 0.35)',
+  },
+  carouselTagText: {
+    color: colors.primary,
+    fontSize: 8,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  carouselPlayButton: {
+    position: 'absolute',
+    bottom: 6,
+    right: 6,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 8,
+  },
+  carouselPlayButtonActive: {
+    backgroundColor: colors.secondary,
+  },
+  carouselTrackTitle: {
+    color: colors.textPrimary,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  carouselTrackArtist: {
+    color: colors.textSecondary,
+    fontSize: 11,
+    marginTop: 2,
+  },
+  trackListCol: {
+    paddingHorizontal: spacing.lg,
+    gap: 8,
+  },
+  trackRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 10,
+    borderRadius: borderRadius.md,
+    backgroundColor: '#0E1829',
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  trackRowSelected: {
+    backgroundColor: '#142135',
+    borderColor: 'rgba(0, 242, 254, 0.35)',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+  },
+  trackIndexCol: {
+    width: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  trackIndexText: {
+    color: colors.textMuted,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  equalizerBars: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 2,
+    height: 16,
+  },
+  bar: {
+    width: 2.5,
+    backgroundColor: colors.primary,
+    borderRadius: 1,
+  },
+  trackThumbWrapper: {
+    width: 44,
+    height: 44,
+    borderRadius: borderRadius.sm,
+    overflow: 'hidden',
+    backgroundColor: '#142135',
+  },
+  trackThumbActive: {
     borderWidth: 1,
     borderColor: colors.primary,
   },
-  horizontalScroll: {
-    flexDirection: 'row',
-  },
-  trackCard: {
-    width: 140,
-    marginRight: 14,
-  },
-  coverWrapper: {
-    position: 'relative',
-    width: 140,
-    height: 140,
-    borderRadius: 8,
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
-  trackCover: {
+  trackThumb: {
     width: '100%',
     height: '100%',
-    backgroundColor: colors.surface,
   },
-  playOverlay: {
-    position: 'absolute',
-    bottom: 8,
-    right: 8,
-    backgroundColor: colors.primary,
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 4,
+  trackInfoCol: {
+    flex: 1,
   },
-  playingOverlay: {
-    backgroundColor: colors.primaryAccent,
-  },
-  trackTitle: {
+  trackTitleText: {
     color: colors.textPrimary,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
   },
-  activeText: {
-    color: colors.primaryAccent,
+  trackTitleTextActive: {
+    color: colors.primary,
+    fontWeight: '700',
   },
-  trackArtist: {
+  trackArtistText: {
     color: colors.textSecondary,
-    fontSize: 12,
+    fontSize: 11,
     marginTop: 2,
+  },
+  trackDurationText: {
+    color: colors.textSecondary,
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  trackDurationActive: {
+    color: colors.primary,
+    fontWeight: '700',
+  },
+  trackMenuButton: {
+    padding: 4,
   },
 });
