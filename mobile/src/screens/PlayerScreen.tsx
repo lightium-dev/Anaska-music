@@ -8,7 +8,6 @@ import {
   Dimensions,
   Platform,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { usePlayerStore } from '../store/playerStore';
 import { colors, spacing, borderRadius } from '../constants/theme';
@@ -25,7 +24,6 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ navigation }) => {
     queue,
     currentIndex,
     isPlaying,
-    isLoading,
     progress,
     currentTime,
     duration,
@@ -70,10 +68,6 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      {/* Background Aura */}
-      <View style={styles.topAura} />
-      <View style={styles.bottomAura} />
-
       {/* Top Navigation Bar */}
       <View style={styles.topBar}>
         <TouchableOpacity
@@ -81,17 +75,17 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ navigation }) => {
           hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
           style={styles.iconButton}
         >
-          <Ionicons name="chevron-down" size={26} color={colors.textFrost} />
+          <Ionicons name="chevron-down" size={20} color="#FFFFFF" />
         </TouchableOpacity>
 
         <View style={styles.topBarCenter}>
           <Text style={styles.nowPlayingLabel}>
             {queue.length > 0
               ? `FLOW QUEUE ${currentIndex >= 0 ? currentIndex + 1 : 1} OF ${queue.length}`
-              : 'NOW PLAYING FROM AI FLOW'}
+              : 'NOW PLAYING'}
           </Text>
           <Text style={styles.genreLabel}>
-            {currentTrack.genreId ? currentTrack.genreId.toUpperCase() : 'SUBLIMINAL'}
+            {currentTrack.genreId ? currentTrack.genreId.toUpperCase() : 'AI MASTER'}
           </Text>
         </View>
 
@@ -102,33 +96,33 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ navigation }) => {
           }}
           style={styles.iconButton}
         >
-          <Ionicons name="sparkles" size={20} color={colors.primary} />
+          <Ionicons name="sparkles" size={16} color={colors.primary} />
         </TouchableOpacity>
       </View>
 
-      {/* Holographic Cover Art Container */}
+      {/* Cover Art Container */}
       <View style={styles.coverSection}>
-        <View style={styles.coverRingWrapper}>
+        <View style={styles.coverWrapper}>
           <Image source={{ uri: currentTrack.coverUrl }} style={styles.coverImage} />
 
-          {/* Floating Hi-Fi Spec Badge */}
+          {/* Floating Spec Badge */}
           <View style={styles.specBadge}>
-            <Ionicons name="snow" size={12} color={colors.primary} />
-            <Text style={styles.specBadgeText}>24-BIT / 96KHZ LOSSLESS</Text>
+            <Ionicons name="flash" size={10} color={colors.primary} />
+            <Text style={styles.specBadgeText}>320KBPS • MASTER</Text>
           </View>
         </View>
 
-        {/* Live Audio Visualizer Micro-Bars */}
+        {/* Audio Visualizer Micro-Bars */}
         <View style={styles.visualizerRow}>
-          {[4, 12, 20, 16, 26, 18, 8, 22, 28, 14, 24, 10, 18, 26, 12, 6].map(
+          {[4, 12, 18, 14, 22, 16, 8, 20, 24, 12, 18, 10, 16, 22, 10, 5].map(
             (barHeight, idx) => (
               <View
                 key={idx}
                 style={[
                   styles.visualizerBar,
                   {
-                    height: isPlaying ? barHeight : 4,
-                    backgroundColor: idx % 2 === 0 ? colors.primary : colors.secondary,
+                    height: isPlaying ? barHeight : 3,
+                    backgroundColor: idx % 2 === 0 ? colors.primary : '#3b82f6',
                   },
                 ]}
               />
@@ -155,13 +149,13 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ navigation }) => {
         >
           <Ionicons
             name={isLiked ? 'heart' : 'heart-outline'}
-            size={24}
-            color={isLiked ? colors.primary : colors.textSecondary}
+            size={20}
+            color={isLiked ? colors.primary : '#888888'}
           />
         </TouchableOpacity>
       </View>
 
-      {/* Interactive Scrubber Component */}
+      {/* Interactive Scrubber */}
       <View style={styles.scrubberContainer}>
         <TouchableOpacity
           style={styles.scrubberTouch}
@@ -169,10 +163,7 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ navigation }) => {
           onPress={handleSeekPress}
         >
           <View style={styles.scrubberTrackBg}>
-            <LinearGradient
-              colors={['#0284C7', '#38BDF8', '#00F2FE']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
+            <View
               style={[
                 styles.scrubberFill,
                 { width: `${Math.min(100, Math.max(0, progress * 100))}%` },
@@ -180,7 +171,7 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ navigation }) => {
             />
           </View>
 
-          {/* Ice Crystal Glowing Knob */}
+          {/* Scrubber Knob */}
           <View
             style={[
               styles.scrubberKnob,
@@ -193,14 +184,14 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ navigation }) => {
         <View style={styles.timecodeRow}>
           <Text style={styles.timeText}>{formatTime(currentTime)}</Text>
           <View style={styles.audioFormatBadge}>
-            <MaterialCommunityIcons name="waveform" size={12} color={colors.primary} />
+            <MaterialCommunityIcons name="waveform" size={11} color={colors.primary} />
             <Text style={styles.formatText}>Spatial Audio</Text>
           </View>
           <Text style={styles.timeText}>-{formatTime(remainingTime)}</Text>
         </View>
       </View>
 
-      {/* Main Playback Transport Controls */}
+      {/* Main Transport Controls */}
       <View style={styles.transportRow}>
         {/* Shuffle */}
         <TouchableOpacity
@@ -210,10 +201,9 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ navigation }) => {
         >
           <Ionicons
             name="shuffle"
-            size={22}
-            color={isShuffle ? colors.primary : colors.textSecondary}
+            size={20}
+            color={isShuffle ? colors.primary : '#888888'}
           />
-          {isShuffle && <View style={styles.activeDot} />}
         </TouchableOpacity>
 
         {/* Previous */}
@@ -222,28 +212,21 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ navigation }) => {
           onPress={playPrevious}
           activeOpacity={0.7}
         >
-          <Ionicons name="play-skip-back" size={24} color={colors.textFrost} />
+          <Ionicons name="play-skip-back" size={20} color="#FFFFFF" />
         </TouchableOpacity>
 
-        {/* Master Central Circular Play/Pause Orb */}
+        {/* Master Play/Pause Button */}
         <TouchableOpacity
-          style={styles.masterOrbOuter}
+          style={styles.masterPlayBtn}
           onPress={togglePlayPause}
           activeOpacity={0.9}
         >
-          <LinearGradient
-            colors={['#0284C7', '#00F2FE', '#F0F9FF']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.masterOrbGradient}
-          >
-            <Ionicons
-              name={isPlaying ? 'pause' : 'play'}
-              size={36}
-              color="#070B14"
-              style={{ marginLeft: isPlaying ? 0 : 3 }}
-            />
-          </LinearGradient>
+          <Ionicons
+            name={isPlaying ? 'pause' : 'play'}
+            size={28}
+            color="#FFFFFF"
+            style={{ marginLeft: isPlaying ? 0 : 2 }}
+          />
         </TouchableOpacity>
 
         {/* Next */}
@@ -252,58 +235,49 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ navigation }) => {
           onPress={playNext}
           activeOpacity={0.7}
         >
-          <Ionicons name="play-skip-forward" size={24} color={colors.textFrost} />
+          <Ionicons name="play-skip-forward" size={20} color="#FFFFFF" />
         </TouchableOpacity>
 
         {/* Repeat */}
         <TouchableOpacity style={styles.transportBtn} onPress={toggleRepeat} activeOpacity={0.7}>
           <Ionicons
             name={repeatMode === 'one' ? 'repeat-outline' : 'repeat'}
-            size={22}
-            color={repeatMode !== 'off' ? colors.primary : colors.textSecondary}
+            size={20}
+            color={repeatMode !== 'off' ? colors.primary : '#888888'}
           />
-          {repeatMode !== 'off' && <View style={styles.activeDot} />}
         </TouchableOpacity>
       </View>
 
       {/* Bottom Utility Deck */}
       <View style={styles.bottomDeck}>
-        {/* Device Banner */}
+        {/* Connected Device Card */}
         <View style={styles.deviceBanner}>
           <View style={styles.deviceLeft}>
             <View style={styles.deviceIconCircle}>
-              <Ionicons name="headset-outline" size={16} color={colors.primary} />
+              <Ionicons name="headset-outline" size={15} color={colors.primary} />
             </View>
             <View>
               <Text style={styles.deviceStatus}>CONNECTED DEVICE</Text>
               <Text style={styles.deviceName}>Anaska Spatial Buds Pro</Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.deviceSwitchBtn} activeOpacity={0.7}>
-            <Text style={styles.deviceSwitchText}>Switch</Text>
-            <Ionicons name="chevron-down" size={12} color={colors.secondary} />
-          </TouchableOpacity>
+          <View style={styles.activePill}>
+            <Text style={styles.activePillText}>ACTIVE</Text>
+          </View>
         </View>
 
-        {/* Quick Actions: Lyrics Live & Ask DJ Muse */}
-        <View style={styles.quickActionsRow}>
-          <TouchableOpacity style={styles.quickActionBtn} activeOpacity={0.75}>
-            <Ionicons name="musical-notes-outline" size={18} color={colors.primary} />
-            <Text style={styles.quickActionText}>Lyrics Live</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.quickActionBtn, styles.quickActionMuse]}
-            onPress={() => {
-              navigation.goBack();
-              navigation.navigate('ChatTab');
-            }}
-            activeOpacity={0.85}
-          >
-            <Ionicons name="sparkles" size={18} color={colors.primary} />
-            <Text style={styles.quickActionMuseText}>Ask DJ Muse</Text>
-          </TouchableOpacity>
-        </View>
+        {/* Quick Action: Ask DJ Muse */}
+        <TouchableOpacity
+          style={styles.askMuseBtn}
+          onPress={() => {
+            navigation.goBack();
+            navigation.navigate('ChatTab');
+          }}
+          activeOpacity={0.85}
+        >
+          <Ionicons name="sparkles" size={16} color={colors.primary} />
+          <Text style={styles.askMuseBtnText}>Ask DJ Muse to Adapt Session</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -312,74 +286,58 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#000000',
     paddingHorizontal: spacing.lg,
     paddingTop: Platform.OS === 'ios' ? 50 : 20,
-    paddingBottom: spacing.lg,
+    paddingBottom: 32,
     justifyContent: 'space-between',
   },
   center: {
     justifyContent: 'center',
     alignItems: 'center',
   },
-  topAura: {
-    position: 'absolute',
-    top: -60,
-    alignSelf: 'center',
-    width: 320,
-    height: 320,
-    borderRadius: 160,
-    backgroundColor: 'rgba(0, 242, 254, 0.08)',
-  },
-  bottomAura: {
-    position: 'absolute',
-    bottom: -60,
-    alignSelf: 'center',
-    width: 300,
-    height: 300,
-    borderRadius: 150,
-    backgroundColor: 'rgba(2, 132, 199, 0.08)',
-  },
   noTrackText: {
-    color: colors.textSecondary,
-    fontSize: 16,
+    color: '#888888',
+    fontSize: 15,
     marginBottom: spacing.md,
   },
   backButton: {
     paddingHorizontal: 20,
     paddingVertical: 10,
-    borderRadius: borderRadius.pill,
+    borderRadius: borderRadius.xs,
     backgroundColor: colors.primary,
   },
   backButtonText: {
-    color: '#002022',
+    color: '#FFFFFF',
     fontWeight: '700',
   },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: spacing.xs,
+    paddingVertical: 6,
   },
   iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.sm,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(14, 24, 42, 0.6)',
+    backgroundColor: '#181818',
+    borderWidth: 1,
+    borderColor: '#262626',
   },
   topBarCenter: {
     alignItems: 'center',
   },
   nowPlayingLabel: {
-    color: colors.secondary,
+    color: colors.primary,
     fontSize: 9,
     fontWeight: '800',
-    letterSpacing: 1.5,
+    letterSpacing: 1.2,
   },
   genreLabel: {
-    color: colors.textFrost,
+    color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '700',
     marginTop: 2,
@@ -387,23 +345,18 @@ const styles = StyleSheet.create({
   },
   coverSection: {
     alignItems: 'center',
-    marginVertical: spacing.sm,
+    marginVertical: 6,
   },
-  coverRingWrapper: {
+  coverWrapper: {
     width: width - spacing.lg * 2.8,
     height: width - spacing.lg * 2.8,
-    maxWidth: 320,
-    maxHeight: 320,
-    borderRadius: borderRadius.xl,
-    borderWidth: 1.5,
-    borderColor: 'rgba(0, 242, 254, 0.35)',
+    maxWidth: 300,
+    maxHeight: 300,
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
+    borderColor: '#262626',
     overflow: 'hidden',
-    backgroundColor: '#0E1829',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 24,
-    elevation: 8,
+    backgroundColor: '#111111',
     position: 'relative',
   },
   coverImage: {
@@ -412,30 +365,30 @@ const styles = StyleSheet.create({
   },
   specBadge: {
     position: 'absolute',
-    top: 12,
-    right: 12,
+    top: 10,
+    right: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 10,
+    gap: 4,
+    paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: borderRadius.pill,
-    backgroundColor: 'rgba(7, 11, 20, 0.85)',
+    borderRadius: borderRadius.xs,
+    backgroundColor: '#111111',
     borderWidth: 1,
-    borderColor: 'rgba(0, 242, 254, 0.4)',
+    borderColor: '#262626',
   },
   specBadgeText: {
     color: colors.primary,
     fontSize: 9,
-    fontWeight: '800',
-    letterSpacing: 0.8,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   visualizerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    height: 30,
-    marginTop: spacing.md,
+    height: 24,
+    marginTop: 16,
   },
   visualizerBar: {
     width: 3,
@@ -445,71 +398,67 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 4,
-    marginTop: spacing.xs,
+    paddingHorizontal: 2,
   },
   trackTitleCol: {
     flex: 1,
     marginRight: spacing.md,
   },
   trackTitle: {
-    color: colors.textPrimary,
-    fontSize: 22,
-    fontWeight: '800',
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: '700',
     letterSpacing: -0.3,
   },
   trackArtist: {
-    color: colors.textSecondary,
-    fontSize: 14,
-    marginTop: 4,
+    color: '#888888',
+    fontSize: 13,
+    marginTop: 3,
   },
   likeButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(14, 24, 42, 0.8)',
+    width: 38,
+    height: 38,
+    borderRadius: borderRadius.sm,
+    backgroundColor: '#181818',
     borderWidth: 1,
-    borderColor: 'rgba(0, 242, 254, 0.2)',
+    borderColor: '#262626',
     alignItems: 'center',
     justifyContent: 'center',
   },
   likeButtonActive: {
-    borderColor: 'rgba(0, 242, 254, 0.5)',
+    borderColor: colors.primary,
   },
   scrubberContainer: {
-    marginVertical: spacing.sm,
+    marginVertical: 4,
   },
   scrubberTouch: {
-    height: 24,
+    height: 20,
     justifyContent: 'center',
     position: 'relative',
   },
   scrubberTrackBg: {
-    height: 4,
-    backgroundColor: '#0F172A',
-    borderRadius: 2,
-    borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.2)',
+    height: 3,
+    backgroundColor: '#181818',
+    borderRadius: 1.5,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#262626',
   },
   scrubberFill: {
     height: '100%',
-    borderRadius: 2,
+    backgroundColor: colors.primary,
+    borderRadius: 1.5,
   },
   scrubberKnob: {
     position: 'absolute',
-    top: 5,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: '#F0F9FF',
+    top: 4,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#FFFFFF',
     borderWidth: 2,
     borderColor: colors.primary,
-    marginLeft: -7,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.95,
-    shadowRadius: 8,
+    marginLeft: -6,
   },
   timecodeRow: {
     flexDirection: 'row',
@@ -518,7 +467,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   timeText: {
-    color: colors.textSecondary,
+    color: '#888888',
     fontSize: 11,
     fontWeight: '600',
   },
@@ -528,148 +477,111 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   formatText: {
-    color: colors.secondary,
+    color: '#888888',
     fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.5,
+    fontWeight: '600',
   },
   transportRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 8,
-    marginVertical: spacing.xs,
+    marginVertical: 8,
   },
   transportBtn: {
-    width: 44,
-    height: 44,
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.sm,
+    backgroundColor: '#181818',
+    borderWidth: 1,
+    borderColor: '#262626',
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
-  },
-  activeDot: {
-    position: 'absolute',
-    bottom: 4,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.primary,
   },
   secondaryTransportBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(15, 23, 42, 0.8)',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#181818',
     borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.2)',
+    borderColor: '#262626',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  masterOrbOuter: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    overflow: 'hidden',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.75,
-    shadowRadius: 20,
-    elevation: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(186, 230, 253, 0.5)',
-  },
-  masterOrbGradient: {
-    width: '100%',
-    height: '100%',
+  masterPlayBtn: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   bottomDeck: {
-    gap: 10,
+    gap: 8,
   },
   deviceBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 10,
-    borderRadius: borderRadius.md,
-    backgroundColor: 'rgba(11, 19, 43, 0.7)',
+    borderRadius: borderRadius.sm,
+    backgroundColor: '#111111',
     borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.25)',
+    borderColor: '#262626',
   },
   deviceLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
   },
   deviceIconCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(0, 242, 254, 0.15)',
+    width: 28,
+    height: 28,
+    borderRadius: borderRadius.xs,
+    backgroundColor: '#181818',
     borderWidth: 1,
-    borderColor: 'rgba(0, 242, 254, 0.3)',
+    borderColor: '#262626',
     alignItems: 'center',
     justifyContent: 'center',
   },
   deviceStatus: {
-    color: colors.secondary,
+    color: '#888888',
     fontSize: 9,
-    fontWeight: '800',
-    letterSpacing: 0.8,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   deviceName: {
-    color: colors.textFrost,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  deviceSwitchBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: borderRadius.pill,
-    backgroundColor: '#0F172A',
-    borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.2)',
-  },
-  deviceSwitchText: {
-    color: '#BAE6FD',
+    color: '#FFFFFF',
     fontSize: 11,
     fontWeight: '600',
   },
-  quickActionsRow: {
-    flexDirection: 'row',
-    gap: 10,
+  activePill: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: borderRadius.xs,
+    backgroundColor: 'rgba(37, 99, 235, 0.2)',
+    borderWidth: 1,
+    borderColor: '#262626',
   },
-  quickActionBtn: {
-    flex: 1,
+  activePillText: {
+    color: colors.primary,
+    fontSize: 9,
+    fontWeight: '700',
+  },
+  askMuseBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    paddingVertical: 12,
-    borderRadius: borderRadius.md,
-    backgroundColor: 'rgba(11, 19, 43, 0.8)',
+    paddingVertical: 11,
+    borderRadius: borderRadius.sm,
+    backgroundColor: '#181818',
     borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.2)',
+    borderColor: '#262626',
   },
-  quickActionText: {
-    color: colors.textFrost,
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  quickActionMuse: {
-    borderColor: 'rgba(0, 242, 254, 0.4)',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-  },
-  quickActionMuseText: {
+  askMuseBtnText: {
     color: colors.primary,
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: '600',
   },
 });

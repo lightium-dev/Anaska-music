@@ -8,9 +8,9 @@ import {
   Image,
   TouchableOpacity,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius } from '../constants/theme';
 import { musicService } from '../services/musicService';
 import { usePlayerStore } from '../store/playerStore';
@@ -88,16 +88,16 @@ export const SearchScreen: React.FC = () => {
         <View style={styles.trackIndexCol}>
           {isThisPlaying ? (
             <View style={styles.equalizerBars}>
+              <View style={[styles.bar, { height: 6 }]} />
+              <View style={[styles.bar, { height: 12 }]} />
               <View style={[styles.bar, { height: 8 }]} />
-              <View style={[styles.bar, { height: 14 }]} />
-              <View style={[styles.bar, { height: 10 }]} />
             </View>
           ) : (
             <Text style={styles.trackIndexText}>{index + 1 < 10 ? `0${index + 1}` : index + 1}</Text>
           )}
         </View>
 
-        <View style={[styles.thumbRing, isCurrent && styles.thumbRingActive]}>
+        <View style={styles.thumbWrapper}>
           <Image source={{ uri: item.coverUrl }} style={styles.trackThumb} />
         </View>
 
@@ -114,24 +114,22 @@ export const SearchScreen: React.FC = () => {
           {formatDuration(item.duration)}
         </Text>
 
-        <TouchableOpacity style={styles.playActionBtn}>
+        <View style={styles.playActionBtn}>
           <Ionicons
             name={isThisPlaying ? 'pause' : 'play'}
             size={16}
-            color={isCurrent ? colors.primary : colors.textSecondary}
+            color={isCurrent ? colors.primary : colors.textMuted}
           />
-        </TouchableOpacity>
+        </View>
       </TouchableOpacity>
     );
   };
 
   return (
     <View style={styles.container}>
-      <View style={styles.topAura} />
-
-      {/* Header & Search Input */}
+      {/* Search Header */}
       <View style={styles.searchHeader}>
-        <View style={styles.titleWithLogoRow}>
+        <View style={styles.brandRow}>
           <Image
             source={require('../../assets/logo.png')}
             style={styles.headerLogo}
@@ -144,7 +142,7 @@ export const SearchScreen: React.FC = () => {
         </View>
 
         <View style={styles.searchBox}>
-          <Ionicons name="search" size={20} color={colors.primary} style={styles.searchIcon} />
+          <Ionicons name="search" size={18} color={colors.primary} style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
             placeholder="Search tracks, artists, soundscapes..."
@@ -155,13 +153,13 @@ export const SearchScreen: React.FC = () => {
           />
           {query.length > 0 && (
             <TouchableOpacity onPress={() => setQuery('')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
+              <Ionicons name="close-circle" size={16} color={colors.textMuted} />
             </TouchableOpacity>
           )}
         </View>
       </View>
 
-      {/* Genre Pills Filter */}
+      {/* Genre Filter Pills */}
       <View style={styles.genreFilterContainer}>
         <FlatList
           horizontal
@@ -178,20 +176,9 @@ export const SearchScreen: React.FC = () => {
                 activeOpacity={0.8}
                 style={[styles.genrePill, isSelected && styles.genrePillActive]}
               >
-                {isSelected ? (
-                  <LinearGradient
-                    colors={['#00F2FE', '#38BDF8']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.genrePillGradient}
-                  >
-                    <Text style={styles.genreTextActive}>{item.name}</Text>
-                  </LinearGradient>
-                ) : (
-                  <View style={styles.genrePillContent}>
-                    <Text style={styles.genreTextInactive}>{item.name}</Text>
-                  </View>
-                )}
+                <Text style={[styles.genreText, isSelected && styles.genreTextActive]}>
+                  {item.name}
+                </Text>
               </TouchableOpacity>
             );
           }}
@@ -201,7 +188,7 @@ export const SearchScreen: React.FC = () => {
       {/* Results List */}
       {loading ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
+          <ActivityIndicator size="small" color={colors.primary} />
         </View>
       ) : (
         <FlatList
@@ -212,7 +199,7 @@ export const SearchScreen: React.FC = () => {
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={styles.centerContainer}>
-              <Ionicons name="musical-notes-outline" size={48} color={colors.textMuted} />
+              <Ionicons name="musical-notes-outline" size={40} color={colors.textMuted} />
               <Text style={styles.emptyTitle}>No matching frequencies</Text>
               <Text style={styles.emptySubtitle}>Try adjusting your search or genre filter</Text>
             </View>
@@ -226,164 +213,133 @@ export const SearchScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
-  },
-  topAura: {
-    position: 'absolute',
-    top: -80,
-    alignSelf: 'center',
-    width: 320,
-    height: 320,
-    borderRadius: 160,
-    backgroundColor: 'rgba(0, 242, 254, 0.08)',
+    backgroundColor: '#000000',
   },
   searchHeader: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl + 10,
-    paddingBottom: spacing.sm,
+    paddingTop: Platform.OS === 'ios' ? 52 : 24,
+    paddingBottom: 12,
   },
-  titleWithLogoRow: {
+  brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginBottom: spacing.md,
+    gap: 10,
+    marginBottom: 14,
   },
   headerLogo: {
-    width: 38,
-    height: 38,
-    borderRadius: 9,
+    width: 32,
+    height: 32,
+    borderRadius: borderRadius.xs,
   },
   metaLabel: {
     color: colors.primary,
     fontSize: 10,
     fontWeight: '800',
-    letterSpacing: 1.5,
+    letterSpacing: 1.2,
   },
   pageTitle: {
-    color: colors.textPrimary,
-    fontSize: 24,
-    fontWeight: '800',
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: '700',
     letterSpacing: -0.3,
-    marginTop: 2,
+    marginTop: 1,
   },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(14, 23, 42, 0.95)',
-    borderRadius: borderRadius.pill,
+    backgroundColor: '#181818',
+    borderRadius: borderRadius.sm,
     borderWidth: 1,
-    borderColor: 'rgba(0, 242, 254, 0.3)',
-    paddingHorizontal: 16,
-    paddingVertical: 4,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
+    borderColor: '#262626',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   searchIcon: {
-    marginRight: 10,
+    marginRight: 8,
   },
   searchInput: {
     flex: 1,
-    color: colors.textFrost,
-    fontSize: 14,
-    paddingVertical: 10,
+    color: '#FFFFFF',
+    fontSize: 13,
+    padding: 0,
   },
   genreFilterContainer: {
-    paddingVertical: spacing.xs,
+    paddingVertical: 6,
   },
   genreList: {
     paddingHorizontal: spacing.lg,
     gap: 8,
   },
   genrePill: {
-    borderRadius: borderRadius.pill,
-    overflow: 'hidden',
-    backgroundColor: '#0E1829',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: borderRadius.xs,
+    backgroundColor: '#181818',
     borderWidth: 1,
-    borderColor: 'rgba(0, 242, 254, 0.18)',
+    borderColor: '#262626',
   },
   genrePillActive: {
-    borderColor: 'rgba(224, 242, 254, 0.4)',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
-    elevation: 4,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
-  genrePillGradient: {
-    paddingHorizontal: 16,
-    paddingVertical: 7,
-  },
-  genrePillContent: {
-    paddingHorizontal: 16,
-    paddingVertical: 7,
-  },
-  genreTextActive: {
-    color: '#002022',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  genreTextInactive: {
-    color: colors.textSecondary,
+  genreText: {
+    color: '#888888',
     fontSize: 12,
     fontWeight: '500',
   },
+  genreTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
   trackList: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-    paddingBottom: 220,
+    paddingTop: 10,
+    paddingBottom: 180,
     gap: 8,
   },
   trackRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
     padding: 10,
-    borderRadius: borderRadius.md,
-    backgroundColor: '#0E1829',
+    borderRadius: borderRadius.sm,
+    backgroundColor: '#111111',
     borderWidth: 1,
-    borderColor: 'transparent',
+    borderColor: '#262626',
   },
   trackRowActive: {
-    backgroundColor: '#142135',
-    borderColor: 'rgba(0, 242, 254, 0.35)',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
+    borderColor: colors.primary,
+    backgroundColor: '#181818',
   },
   trackIndexCol: {
-    width: 20,
+    width: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
   trackIndexText: {
-    color: colors.textMuted,
+    color: '#888888',
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   equalizerBars: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: 2,
-    height: 14,
+    height: 12,
   },
   bar: {
     width: 2,
     backgroundColor: colors.primary,
     borderRadius: 1,
   },
-  thumbRing: {
-    width: 44,
-    height: 44,
-    borderRadius: borderRadius.sm,
+  thumbWrapper: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.xs,
     overflow: 'hidden',
-    backgroundColor: '#142135',
-  },
-  thumbRingActive: {
+    backgroundColor: '#181818',
     borderWidth: 1,
-    borderColor: colors.primary,
+    borderColor: '#262626',
   },
   trackThumb: {
     width: '100%',
@@ -393,27 +349,26 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   trackTitle: {
-    color: colors.textPrimary,
+    color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '600',
   },
   trackTitleActive: {
     color: colors.primary,
-    fontWeight: '700',
   },
   trackArtist: {
-    color: colors.textSecondary,
+    color: '#888888',
     fontSize: 11,
     marginTop: 2,
   },
   trackDuration: {
-    color: colors.textSecondary,
+    color: '#888888',
     fontSize: 11,
     fontWeight: '500',
   },
   trackDurationActive: {
     color: colors.primary,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   playActionBtn: {
     padding: 4,
@@ -425,14 +380,14 @@ const styles = StyleSheet.create({
     paddingTop: 60,
   },
   emptyTitle: {
-    color: colors.textPrimary,
-    fontSize: 16,
-    fontWeight: '700',
-    marginTop: 12,
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
+    marginTop: 10,
   },
   emptySubtitle: {
-    color: colors.textSecondary,
-    fontSize: 13,
-    marginTop: 4,
+    color: '#888888',
+    fontSize: 12,
+    marginTop: 3,
   },
 });

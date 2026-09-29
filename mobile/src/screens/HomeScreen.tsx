@@ -7,31 +7,28 @@ import {
   Image,
   TouchableOpacity,
   RefreshControl,
-  ActivityIndicator,
-  ImageBackground,
+  Platform,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius } from '../constants/theme';
-import { musicService } from '../services/musicService';
-import { usePlayerStore } from '../store/playerStore';
 import { useUserStore } from '../store/userStore';
-import { Genre, Track } from '../types';
+import { usePlayerStore } from '../store/playerStore';
+import { musicService } from '../services/musicService';
+import { Track, Genre } from '../types';
+
+const FILTER_TAGS = [
+  'All',
+  'Chill',
+  'Electronic',
+  'Rock',
+  'Metal',
+  'Synthwave',
+  'Ambient',
+];
 
 interface HomeScreenProps {
   navigation: any;
 }
-
-const FILTER_TAGS = [
-  'All',
-  'Rock & Grunge',
-  'Metal & Industrial',
-  'Sub-Zero Beats',
-  'Arctic Chill',
-  'Glacial Bass',
-  'Frost Trance',
-  'Synthwave',
-];
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const user = useUserStore((s) => s.user);
@@ -43,7 +40,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [activeFilter, setActiveFilter] = useState('All');
   const [genres, setGenres] = useState<Genre[]>([]);
   const [tracks, setTracks] = useState<Track[]>([]);
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchData = async () => {
@@ -57,7 +53,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     } catch (err) {
       console.warn('Using local fallback music feed:', err);
     } finally {
-      setLoading(false);
       setRefreshing(false);
     }
   };
@@ -74,41 +69,37 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   // Filtered tracks
   const filteredTracks = tracks.filter((t) => {
     if (activeFilter === 'All') return true;
-    if (activeFilter === 'Rock & Grunge') return t.genreId === 'rock';
-    if (activeFilter === 'Metal & Industrial') return t.genreId === 'metal';
+    if (activeFilter === 'Chill') return t.genreId === 'lofi' || t.genreId === 'ambient';
+    if (activeFilter === 'Electronic') return t.genreId === 'electronic' || t.genreId === 'synthwave';
+    if (activeFilter === 'Rock') return t.genreId === 'rock';
+    if (activeFilter === 'Metal') return t.genreId === 'metal';
     if (activeFilter === 'Synthwave') return t.genreId === 'synthwave';
-    if (activeFilter === 'Sub-Zero Beats' || activeFilter === 'Glacial Bass') {
-      return t.genreId === 'electronic' || t.genreId === 'hiphop';
-    }
-    if (activeFilter === 'Arctic Chill' || activeFilter === 'Frost Trance') {
-      return t.genreId === 'ambient' || t.genreId === 'lofi';
-    }
+    if (activeFilter === 'Ambient') return t.genreId === 'ambient';
     return true;
   });
 
   const heroTrack = tracks[0] || {
-    id: 'hero-1',
+    id: 'hero-default',
     title: 'Neural Hyperdrive - Vol. 4',
-    artist: 'Kavinsky • Muse AI • 132 BPM',
+    artist: 'Kavinsky • Muse AI Session',
     genreId: 'synthwave',
     audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-    coverUrl: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=800&auto=format&fit=crop&q=80',
+    coverUrl:
+      'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=600&auto=format&fit=crop&q=80',
     duration: 372,
   };
 
   const isHeroPlaying = currentTrack?.id === heroTrack.id && isPlaying;
 
-  if (loading) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
-  }
+  const formatDuration = (sec: number) => {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
 
   return (
     <View style={styles.container}>
-      {/* Top Header */}
+      {/* Top App Bar */}
       <View style={styles.header}>
         <View style={styles.headerBrandRow}>
           <Image
@@ -116,189 +107,165 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             style={styles.headerLogo}
             resizeMode="contain"
           />
-          <Text style={styles.headerBrandText}>Anaska</Text>
+          <Text style={styles.headerBrandText}>ANASKA</Text>
         </View>
 
         <View style={styles.headerActions}>
           <TouchableOpacity
-            style={styles.museBadge}
-            onPress={() => navigation.navigate('ChatTab')}
-            activeOpacity={0.8}
+            style={styles.headerIconButton}
+            activeOpacity={0.7}
+            accessibilityLabel="Notifications"
           >
-            <View style={styles.pulseSpark}>
-              <View style={styles.pulseInner} />
-            </View>
-            <Text style={styles.museBadgeText}>MUSE ACTIVE</Text>
+            <Ionicons name="notifications-outline" size={18} color={colors.textSecondary} />
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.avatarButtonWrapper}
+            style={styles.avatarButton}
             onPress={() => navigation.navigate('ProfileTab')}
             activeOpacity={0.8}
-            accessibilityLabel="Settings"
+            accessibilityLabel="Profile"
           >
-            <View style={styles.avatarButton}>
-              <Image
-                source={
-                  user?.avatar && (user.avatar.startsWith('http') || user.avatar.startsWith('file:') || user.avatar.startsWith('content:') || user.avatar.startsWith('data:'))
-                    ? { uri: user.avatar }
-                    : require('../../assets/avatar.png')
-                }
-                style={styles.avatarImg}
-              />
-            </View>
-            <View style={styles.settingsBadge}>
-              <Ionicons name="settings" size={9} color="#002022" />
-            </View>
+            <Image
+              source={
+                user?.avatar &&
+                (user.avatar.startsWith('http') ||
+                  user.avatar.startsWith('file:') ||
+                  user.avatar.startsWith('content:') ||
+                  user.avatar.startsWith('data:'))
+                  ? { uri: user.avatar }
+                  : require('../../assets/avatar.png')
+              }
+              style={styles.avatarImg}
+            />
           </TouchableOpacity>
         </View>
       </View>
 
       <ScrollView
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={colors.primary}
+            tintColor={colors.primaryLight}
           />
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* User Session Greeting */}
-        <View style={styles.greetingSection}>
-          <Text style={styles.greetingMeta}>GLACIAL NIGHT SESSION</Text>
-          <Text style={styles.greetingTitle}>
-            Good evening, {user?.username || 'Alex'}
-          </Text>
+        {/* Greeting & DJ Muse Status */}
+        <View style={styles.greetingRow}>
+          <View>
+            <Text style={styles.sessionMetaLabel}>GLACIAL SESSION</Text>
+            <Text style={styles.greetingTitle}>
+              Good evening, {user?.username || 'Alex'}
+            </Text>
+          </View>
+
+          <TouchableOpacity
+            style={styles.museChip}
+            onPress={() => navigation.navigate('ChatTab')}
+            activeOpacity={0.8}
+          >
+            <View style={styles.musePulseDot} />
+            <Text style={styles.museChipText}>DJ MUSE</Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Mood & Genre Filter Pills */}
+        {/* Flat Filter Pills */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterRow}
+          contentContainerStyle={styles.filterPillsScroll}
+          style={styles.filterRow}
         >
           {FILTER_TAGS.map((tag) => {
             const isActive = activeFilter === tag;
             return (
               <TouchableOpacity
                 key={tag}
+                style={[styles.filterPill, isActive && styles.filterPillActive]}
                 onPress={() => setActiveFilter(tag)}
                 activeOpacity={0.8}
-                style={[styles.filterChip, isActive && styles.filterChipActive]}
               >
-                {isActive ? (
-                  <LinearGradient
-                    colors={['#00F2FE', '#38BDF8']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.filterChipGradient}
-                  >
-                    <Text style={styles.filterChipTextActive}>{tag}</Text>
-                  </LinearGradient>
-                ) : (
-                  <View style={styles.filterChipContent}>
-                    <Text style={styles.filterChipTextInactive}>{tag}</Text>
-                  </View>
-                )}
+                <Text
+                  style={[
+                    styles.filterPillText,
+                    isActive && styles.filterPillTextActive,
+                  ]}
+                >
+                  {tag}
+                </Text>
               </TouchableOpacity>
             );
           })}
         </ScrollView>
 
-        {/* AI-Curated Hero Card: Neural Hyperdrive */}
-        <View style={styles.heroCardOuter}>
-          <ImageBackground
-            source={{ uri: heroTrack.coverUrl }}
-            style={styles.heroImageBg}
-            imageStyle={{ borderRadius: borderRadius.lg }}
-          >
-            <LinearGradient
-              colors={['rgba(7, 11, 20, 0.2)', 'rgba(7, 11, 20, 0.75)', '#070B14']}
-              style={styles.heroScrim}
+        {/* AI-Curated Feature Card */}
+        <View style={styles.featureCard}>
+          <View style={styles.featureCardHeader}>
+            <Text style={styles.featureTag}>AI CURATED FOCUS</Text>
+            <Text style={styles.featureBpm}>132 BPM</Text>
+          </View>
+
+          <View style={styles.featureBody}>
+            <View style={styles.featureArtContainer}>
+              <Image source={{ uri: heroTrack.coverUrl }} style={styles.featureArt} />
+            </View>
+            <View style={styles.featureInfo}>
+              <Text style={styles.featureTitle} numberOfLines={1}>
+                {heroTrack.title}
+              </Text>
+              <Text style={styles.featureArtist} numberOfLines={1}>
+                {heroTrack.artist} • Muse Session
+              </Text>
+              <Text style={styles.featureSub} numberOfLines={1}>
+                Glacial synthetic progression
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.featureFooter}>
+            <TouchableOpacity
+              style={styles.promptMuseBtn}
+              onPress={() => navigation.navigate('ChatTab')}
+              activeOpacity={0.7}
             >
-              <View style={styles.heroBadge}>
-                <Ionicons name="snow-outline" size={13} color={colors.primary} />
-                <Text style={styles.heroBadgeText}>SYNTHESIZED FOR YOUR MOOD</Text>
-              </View>
+              <Ionicons name="mic-outline" size={15} color={colors.textSecondary} />
+              <Text style={styles.promptMuseText}>Prompt Muse</Text>
+            </TouchableOpacity>
 
-              <View style={styles.heroBottomRow}>
-                <View style={styles.heroTextCol}>
-                  <Text style={styles.heroSub}>AI Curated Focus</Text>
-                  <Text style={styles.heroTitle} numberOfLines={1}>
-                    {heroTrack.title}
-                  </Text>
-                  <Text style={styles.heroMeta} numberOfLines={1}>
-                    {heroTrack.artist} • Cryo Mix
-                  </Text>
-                </View>
-
-                <TouchableOpacity
-                  style={styles.heroPlayOrb}
-                  onPress={() => {
-                    if (isHeroPlaying) {
-                      pause();
-                    } else {
-                      play(heroTrack, [heroTrack, ...tracks]);
-                    }
-                  }}
-                  activeOpacity={0.85}
-                >
-                  <LinearGradient
-                    colors={['#00F2FE', '#38BDF8', '#E0F2FE']}
-                    style={styles.heroPlayGradient}
-                  >
-                    <Ionicons
-                      name={isHeroPlaying ? 'pause' : 'play'}
-                      size={28}
-                      color="#002022"
-                      style={{ marginLeft: isHeroPlaying ? 0 : 3 }}
-                    />
-                  </LinearGradient>
-                </TouchableOpacity>
-              </View>
-            </LinearGradient>
-          </ImageBackground>
+            <TouchableOpacity
+              style={styles.playMixBtn}
+              onPress={() => {
+                if (isHeroPlaying) {
+                  pause();
+                } else {
+                  play(heroTrack, [heroTrack, ...tracks]);
+                }
+              }}
+              activeOpacity={0.85}
+            >
+              <Ionicons
+                name={isHeroPlaying ? 'pause' : 'play'}
+                size={14}
+                color="#FFFFFF"
+                style={{ marginRight: 4 }}
+              />
+              <Text style={styles.playMixBtnText}>
+                {isHeroPlaying ? 'Pause Mix' : 'Play Mix'}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* DJ Muse Interactive Hub Banner */}
-        <TouchableOpacity
-          style={styles.museHubCard}
-          onPress={() => navigation.navigate('ChatTab')}
-          activeOpacity={0.85}
-        >
-          <LinearGradient
-            colors={['#0E1829', '#142135']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.museHubGradient}
-          >
-            <View style={styles.museHubIconCircle}>
-              <MaterialCommunityIcons name="waveform" size={22} color={colors.primary} />
-            </View>
-
-            <View style={styles.museHubTextCol}>
-              <Text style={styles.museHubTitle}>DJ Muse Interactive Hub</Text>
-              <Text style={styles.museHubSubtitle}>Say “Play sub-zero ambient frost”</Text>
-            </View>
-
-            <View style={styles.museHubPromptButton}>
-              <Ionicons name="mic-outline" size={14} color={colors.textFrost} />
-              <Text style={styles.museHubPromptText}>Prompt</Text>
-            </View>
-          </LinearGradient>
-        </TouchableOpacity>
-
-        {/* Recommended for You Horizontal Carousel */}
+        {/* Recommended Carousel */}
         <View style={styles.sectionHeader}>
           <View>
-            <Text style={styles.sectionTitle}>Recommended for You</Text>
-            <Text style={styles.sectionSubtitle}>Glacial flow curated from your timeline</Text>
+            <Text style={styles.sectionTitle}>Recommended</Text>
+            <Text style={styles.sectionSubtitle}>Curated for your daily timeline</Text>
           </View>
-          <TouchableOpacity activeOpacity={0.7} style={styles.exploreLink}>
-            <Text style={styles.exploreText}>Explore</Text>
-            <Ionicons name="chevron-forward" size={14} color={colors.primary} />
+          <TouchableOpacity activeOpacity={0.7}>
+            <Text style={styles.sectionLink}>View all</Text>
           </TouchableOpacity>
         </View>
 
@@ -307,9 +274,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.carouselContainer}
         >
-          {tracks.slice(0, 5).map((track, idx) => {
+          {tracks.slice(0, 6).map((track) => {
             const isThisPlaying = currentTrack?.id === track.id && isPlaying;
-            const tagLabels = ['AMBIENT', 'ARCTIC', 'CHILLWAVE', 'GLACIER', 'HYPERION'];
             return (
               <TouchableOpacity
                 key={track.id}
@@ -319,31 +285,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               >
                 <View style={styles.carouselArtWrapper}>
                   <Image source={{ uri: track.coverUrl }} style={styles.carouselArt} />
-                  <View style={styles.carouselTag}>
-                    <Text style={styles.carouselTagText}>
-                      {tagLabels[idx % tagLabels.length]}
-                    </Text>
-                  </View>
-
-                  <View
-                    style={[
-                      styles.carouselPlayButton,
-                      isThisPlaying && styles.carouselPlayButtonActive,
-                    ]}
-                  >
-                    <Ionicons
-                      name={isThisPlaying ? 'pause' : 'play'}
-                      size={18}
-                      color="#002022"
-                      style={{ marginLeft: isThisPlaying ? 0 : 2 }}
-                    />
-                  </View>
+                  {isThisPlaying && (
+                    <View style={styles.playingBadge}>
+                      <Ionicons name="volume-high" size={12} color="#FFFFFF" />
+                    </View>
+                  )}
                 </View>
-
-                <Text style={styles.carouselTrackTitle} numberOfLines={1}>
+                <Text style={styles.carouselTitle} numberOfLines={1}>
                   {track.title}
                 </Text>
-                <Text style={styles.carouselTrackArtist} numberOfLines={1}>
+                <Text style={styles.carouselArtist} numberOfLines={1}>
                   {track.artist}
                 </Text>
               </TouchableOpacity>
@@ -351,32 +302,23 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           })}
         </ScrollView>
 
-        {/* Heavy Rotation & Flow: Vertical Playlist */}
+        {/* Heavy Rotation Section */}
         <View style={styles.sectionHeader}>
-          <View>
-            <Text style={styles.sectionTitle}>Heavy Rotation & Flow</Text>
-            <Text style={styles.sectionSubtitle}>Tracks fueling your daily algorithms</Text>
-          </View>
-          <TouchableOpacity style={styles.tuneButton} activeOpacity={0.7}>
-            <Ionicons name="options-outline" size={18} color={colors.textSecondary} />
-          </TouchableOpacity>
+          <Text style={styles.sectionTitle}>Heavy Rotation</Text>
+          <Text style={styles.sectionBadge}>
+            {filteredTracks.length} TRACKS
+          </Text>
         </View>
 
-        <View style={styles.trackListCol}>
-          {filteredTracks.map((track, index) => {
+        <View style={styles.trackList}>
+          {filteredTracks.map((track, idx) => {
             const isSelected = currentTrack?.id === track.id;
             const isThisPlaying = isSelected && isPlaying;
-
-            const formatDuration = (sec: number) => {
-              const m = Math.floor(sec / 60);
-              const s = sec % 60;
-              return `${m}:${s < 10 ? '0' : ''}${s}`;
-            };
 
             return (
               <TouchableOpacity
                 key={track.id}
-                style={[styles.trackRow, isSelected && styles.trackRowSelected]}
+                style={[styles.trackRow, isSelected && styles.trackRowActive]}
                 onPress={() => {
                   if (isSelected && isPlaying) {
                     pause();
@@ -386,51 +328,43 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 }}
                 activeOpacity={0.8}
               >
-                {/* Index or Animated Equalizer */}
+                {/* Index / Status */}
                 <View style={styles.trackIndexCol}>
                   {isThisPlaying ? (
-                    <View style={styles.equalizerBars}>
-                      <View style={[styles.bar, { height: 10 }]} />
-                      <View style={[styles.bar, { height: 16 }]} />
-                      <View style={[styles.bar, { height: 12 }]} />
-                    </View>
+                    <Ionicons name="stats-chart" size={14} color={colors.primaryLight} />
                   ) : (
                     <Text style={styles.trackIndexText}>
-                      {index + 1 < 10 ? `0${index + 1}` : index + 1}
+                      {idx + 1 < 10 ? `0${idx + 1}` : idx + 1}
                     </Text>
                   )}
                 </View>
 
-                {/* Album Thumbnail */}
-                <View style={[styles.trackThumbWrapper, isSelected && styles.trackThumbActive]}>
-                  <Image source={{ uri: track.coverUrl }} style={styles.trackThumb} />
+                {/* Album Art */}
+                <View style={styles.trackRowArtWrapper}>
+                  <Image source={{ uri: track.coverUrl }} style={styles.trackRowArt} />
                 </View>
 
                 {/* Title & Artist */}
-                <View style={styles.trackInfoCol}>
+                <View style={styles.trackRowMeta}>
                   <Text
-                    style={[styles.trackTitleText, isSelected && styles.trackTitleTextActive]}
+                    style={[styles.trackRowTitle, isSelected && styles.trackRowTitleActive]}
                     numberOfLines={1}
                   >
                     {track.title}
                   </Text>
-                  <Text style={styles.trackArtistText} numberOfLines={1}>
+                  <Text style={styles.trackRowArtist} numberOfLines={1}>
                     {track.artist}
                   </Text>
                 </View>
 
                 {/* Duration */}
-                <Text
-                  style={[styles.trackDurationText, isSelected && styles.trackDurationActive]}
-                >
-                  {formatDuration(track.duration)}
+                <Text style={[styles.trackRowDuration, isSelected && styles.trackRowDurationActive]}>
+                  {formatDuration(track.duration || 180)}
                 </Text>
 
-                <TouchableOpacity
-                  style={styles.trackMenuButton}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
-                  <Ionicons name="ellipsis-vertical" size={16} color={colors.textSecondary} />
+                {/* Options / Action Button */}
+                <TouchableOpacity style={styles.trackRowAction} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <Ionicons name="ellipsis-vertical" size={16} color={colors.textMuted} />
                 </TouchableOpacity>
               </TouchableOpacity>
             );
@@ -444,22 +378,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
-  },
-  center: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: '#000000',
   },
   header: {
+    height: 56,
+    marginTop: Platform.OS === 'ios' ? 44 : 10,
+    paddingHorizontal: spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl + 10,
-    paddingBottom: spacing.sm,
-    backgroundColor: 'rgba(7, 11, 20, 0.95)',
+    backgroundColor: '#000000',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 242, 254, 0.1)',
+    borderBottomColor: '#262626',
   },
   headerBrandRow: {
     flexDirection: 'row',
@@ -467,329 +397,254 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerLogo: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
+    width: 28,
+    height: 28,
+    borderRadius: 6,
   },
   headerBrandText: {
-    color: colors.textPrimary,
-    fontSize: 19,
+    color: '#FFFFFF',
+    fontSize: 16,
     fontWeight: '800',
-    letterSpacing: 0.5,
+    letterSpacing: 1.5,
   },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
   },
-  museBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: borderRadius.pill,
-    backgroundColor: 'rgba(14, 24, 42, 0.9)',
+  headerIconButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 6,
+    backgroundColor: '#181818',
     borderWidth: 1,
-    borderColor: 'rgba(0, 242, 254, 0.3)',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-  },
-  pulseSpark: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: colors.primary,
-  },
-  pulseInner: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 3.5,
-    backgroundColor: colors.primary,
-  },
-  museBadgeText: {
-    color: colors.primary,
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.8,
-  },
-  avatarButtonWrapper: {
-    position: 'relative',
+    borderColor: '#262626',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   avatarButton: {
     width: 34,
     height: 34,
-    borderRadius: 17,
-    borderWidth: 1.5,
-    borderColor: 'rgba(0, 242, 254, 0.6)',
+    borderRadius: 6,
+    backgroundColor: '#181818',
+    borderWidth: 1,
+    borderColor: '#262626',
     overflow: 'hidden',
   },
   avatarImg: {
     width: '100%',
     height: '100%',
   },
-  settingsBadge: {
-    position: 'absolute',
-    bottom: -2,
-    right: -2,
-    backgroundColor: colors.primary,
-    width: 15,
-    height: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: '#070B14',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.9,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  scroll: {
-    paddingBottom: 220,
-  },
-  greetingSection: {
+  scrollContent: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
+    paddingBottom: 140,
   },
-  greetingMeta: {
-    color: colors.secondary,
+  greetingRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
+  sessionMetaLabel: {
+    color: colors.primaryLight,
     fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1.5,
-    marginBottom: 4,
+    fontWeight: '700',
+    letterSpacing: 1,
+    marginBottom: 2,
   },
   greetingTitle: {
-    color: colors.textPrimary,
-    fontSize: 24,
-    fontWeight: '800',
-    letterSpacing: -0.5,
-  },
-  filterRow: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    gap: 8,
-  },
-  filterChip: {
-    borderRadius: borderRadius.pill,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(28, 44, 62, 0.8)',
-    backgroundColor: '#0E1829',
-  },
-  filterChipActive: {
-    borderColor: 'rgba(224, 242, 254, 0.4)',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
-    elevation: 4,
-  },
-  filterChipGradient: {
-    paddingHorizontal: 16,
-    paddingVertical: 7,
-    borderRadius: borderRadius.pill,
-  },
-  filterChipContent: {
-    paddingHorizontal: 16,
-    paddingVertical: 7,
-  },
-  filterChipTextActive: {
-    color: '#002022',
-    fontSize: 12,
+    color: '#FFFFFF',
+    fontSize: 20,
     fontWeight: '700',
+    letterSpacing: -0.3,
   },
-  filterChipTextInactive: {
-    color: colors.textSecondary,
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  heroCardOuter: {
-    marginHorizontal: spacing.lg,
-    marginVertical: spacing.sm,
-    borderRadius: borderRadius.lg,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 242, 254, 0.25)',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 6,
-  },
-  heroImageBg: {
-    width: '100%',
-    height: 200,
-  },
-  heroScrim: {
-    flex: 1,
-    justifyContent: 'space-between',
-    padding: spacing.md,
-  },
-  heroBadge: {
-    alignSelf: 'flex-start',
+  museChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: borderRadius.pill,
-    backgroundColor: 'rgba(7, 11, 20, 0.85)',
+    paddingVertical: 5,
+    borderRadius: borderRadius.xs,
+    backgroundColor: '#181818',
     borderWidth: 1,
-    borderColor: 'rgba(0, 242, 254, 0.35)',
+    borderColor: '#262626',
   },
-  heroBadgeText: {
-    color: colors.textFrost,
-    fontSize: 9,
-    fontWeight: '800',
-    letterSpacing: 1,
+  musePulseDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.primaryLight,
   },
-  heroBottomRow: {
+  museChipText: {
+    color: colors.textSecondary,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+  },
+  filterRow: {
+    marginBottom: spacing.lg,
+    marginHorizontal: -spacing.lg,
+  },
+  filterPillsScroll: {
+    paddingHorizontal: spacing.lg,
+    gap: 8,
+  },
+  filterPill: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: borderRadius.xs,
+    backgroundColor: '#181818',
+    borderWidth: 1,
+    borderColor: '#262626',
+  },
+  filterPillActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  filterPillText: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  filterPillTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  featureCard: {
+    backgroundColor: '#111111',
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: '#262626',
+    padding: 14,
+    marginBottom: spacing.xl,
+  },
+  featureCardHeader: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     justifyContent: 'space-between',
+    marginBottom: 10,
   },
-  heroTextCol: {
-    flex: 1,
-    marginRight: spacing.md,
-  },
-  heroSub: {
-    color: colors.primary,
+  featureTag: {
+    color: colors.primaryLight,
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 1,
   },
-  heroTitle: {
-    color: colors.textPrimary,
-    fontSize: 18,
-    fontWeight: '800',
-    marginVertical: 2,
+  featureBpm: {
+    color: colors.textMuted,
+    fontSize: 11,
+    fontWeight: '600',
   },
-  heroMeta: {
+  featureBody: {
+    flexDirection: 'row',
+    gap: 12,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  featureArtContainer: {
+    width: 72,
+    height: 72,
+    borderRadius: borderRadius.xs,
+    overflow: 'hidden',
+    backgroundColor: '#000000',
+    borderWidth: 1,
+    borderColor: '#262626',
+  },
+  featureArt: {
+    width: '100%',
+    height: '100%',
+  },
+  featureInfo: {
+    flex: 1,
+  },
+  featureTitle: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  featureArtist: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    marginTop: 2,
+  },
+  featureSub: {
+    color: colors.textMuted,
+    fontSize: 11,
+    marginTop: 3,
+  },
+  featureFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#262626',
+  },
+  promptMuseBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  promptMuseText: {
     color: colors.textSecondary,
     fontSize: 12,
   },
-  heroPlayOrb: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    overflow: 'hidden',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.7,
-    shadowRadius: 18,
-    elevation: 8,
-  },
-  heroPlayGradient: {
-    width: '100%',
-    height: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  museHubCard: {
-    marginHorizontal: spacing.lg,
-    marginVertical: spacing.xs,
-    borderRadius: borderRadius.md,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 242, 254, 0.2)',
-  },
-  museHubGradient: {
+  playMixBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    gap: 12,
+    backgroundColor: colors.primary,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: borderRadius.xs,
   },
-  museHubIconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0, 242, 254, 0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 242, 254, 0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  museHubTextCol: {
-    flex: 1,
-  },
-  museHubTitle: {
-    color: colors.textPrimary,
-    fontSize: 13,
+  playMixBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
     fontWeight: '700',
-  },
-  museHubSubtitle: {
-    color: colors.textSecondary,
-    fontSize: 11,
-    marginTop: 2,
-  },
-  museHubPromptButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: borderRadius.pill,
-    backgroundColor: '#1A2B45',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 242, 254, 0.35)',
-  },
-  museHubPromptText: {
-    color: colors.textFrost,
-    fontSize: 11,
-    fontWeight: '600',
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    marginTop: spacing.lg,
-    marginBottom: spacing.sm,
+    marginBottom: 12,
   },
   sectionTitle: {
-    color: colors.textPrimary,
-    fontSize: 17,
+    color: '#FFFFFF',
+    fontSize: 15,
     fontWeight: '700',
   },
   sectionSubtitle: {
     color: colors.textSecondary,
     fontSize: 11,
-    marginTop: 2,
+    marginTop: 1,
   },
-  exploreLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
+  sectionLink: {
+    color: colors.primaryLight,
+    fontSize: 11,
+    fontWeight: '600',
   },
-  exploreText: {
-    color: colors.primary,
-    fontSize: 12,
+  sectionBadge: {
+    color: colors.textMuted,
+    fontSize: 10,
     fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  tuneButton: {
-    padding: 4,
+    letterSpacing: 0.8,
   },
   carouselContainer: {
-    paddingHorizontal: spacing.lg,
-    gap: 14,
+    gap: 12,
+    paddingBottom: spacing.lg,
   },
   carouselCard: {
-    width: 140,
+    width: 120,
   },
   carouselArtWrapper: {
-    width: 140,
-    height: 140,
-    borderRadius: borderRadius.md,
+    width: 120,
+    height: 120,
+    borderRadius: borderRadius.xs,
     overflow: 'hidden',
-    backgroundColor: '#0E1829',
+    backgroundColor: '#111111',
     borderWidth: 1,
-    borderColor: 'rgba(0, 242, 254, 0.2)',
+    borderColor: '#262626',
     marginBottom: 6,
     position: 'relative',
   },
@@ -797,136 +652,92 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  carouselTag: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: borderRadius.pill,
-    backgroundColor: 'rgba(7, 11, 20, 0.85)',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 242, 254, 0.35)',
-  },
-  carouselTagText: {
-    color: colors.primary,
-    fontSize: 8,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  carouselPlayButton: {
+  playingBadge: {
     position: 'absolute',
     bottom: 6,
     right: 6,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 22,
+    height: 22,
+    borderRadius: 4,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 8,
   },
-  carouselPlayButtonActive: {
-    backgroundColor: colors.secondary,
-  },
-  carouselTrackTitle: {
-    color: colors.textPrimary,
-    fontSize: 13,
+  carouselTitle: {
+    color: '#FFFFFF',
+    fontSize: 12,
     fontWeight: '600',
   },
-  carouselTrackArtist: {
+  carouselArtist: {
     color: colors.textSecondary,
     fontSize: 11,
-    marginTop: 2,
+    marginTop: 1,
   },
-  trackListCol: {
-    paddingHorizontal: spacing.lg,
-    gap: 8,
+  trackList: {
+    gap: 6,
   },
   trackRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    padding: 10,
-    borderRadius: borderRadius.md,
-    backgroundColor: '#0E1829',
+    padding: 8,
+    borderRadius: borderRadius.xs,
+    backgroundColor: '#111111',
     borderWidth: 1,
-    borderColor: 'transparent',
+    borderColor: '#262626',
+    gap: 10,
   },
-  trackRowSelected: {
-    backgroundColor: '#142135',
-    borderColor: 'rgba(0, 242, 254, 0.35)',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
+  trackRowActive: {
+    backgroundColor: '#181818',
+    borderColor: '#383838',
   },
   trackIndexCol: {
-    width: 24,
+    width: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
   trackIndexText: {
     color: colors.textMuted,
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 11,
+    fontWeight: '600',
   },
-  equalizerBars: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 2,
-    height: 16,
-  },
-  bar: {
-    width: 2.5,
-    backgroundColor: colors.primary,
-    borderRadius: 1,
-  },
-  trackThumbWrapper: {
-    width: 44,
-    height: 44,
-    borderRadius: borderRadius.sm,
+  trackRowArtWrapper: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.xs,
     overflow: 'hidden',
-    backgroundColor: '#142135',
-  },
-  trackThumbActive: {
+    backgroundColor: '#000000',
     borderWidth: 1,
-    borderColor: colors.primary,
+    borderColor: '#262626',
   },
-  trackThumb: {
+  trackRowArt: {
     width: '100%',
     height: '100%',
   },
-  trackInfoCol: {
+  trackRowMeta: {
     flex: 1,
   },
-  trackTitleText: {
-    color: colors.textPrimary,
+  trackRowTitle: {
+    color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '600',
   },
-  trackTitleTextActive: {
-    color: colors.primary,
-    fontWeight: '700',
+  trackRowTitleActive: {
+    color: colors.primaryLight,
   },
-  trackArtistText: {
+  trackRowArtist: {
     color: colors.textSecondary,
     fontSize: 11,
     marginTop: 2,
   },
-  trackDurationText: {
-    color: colors.textSecondary,
+  trackRowDuration: {
+    color: colors.textMuted,
     fontSize: 11,
     fontWeight: '500',
   },
-  trackDurationActive: {
+  trackRowDurationActive: {
     color: colors.primary,
-    fontWeight: '700',
   },
-  trackMenuButton: {
-    padding: 4,
+  trackRowAction: {
+    padding: 2,
   },
 });

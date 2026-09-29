@@ -1,62 +1,65 @@
+// Anaska Cyber-Sonic / Obsidian Precision Design System
+// Inspired by stitch_anaska_ai_music_streamer
+
 export const colors = {
-  // Deep obsidian foundations
-  background: '#070B14',
-  backgroundLow: '#050912',
-  surface: '#0A111F',
-  surfaceElevated: '#0E182A',
-  surfaceCard: '#142135',
-  surfaceCardHover: '#1B2C45',
-  surfaceGlass: 'rgba(14, 24, 42, 0.75)',
+  // Pure Obsidian & Deep Black Foundations
+  background: '#000000',
+  backgroundElevated: '#0a0a0a',
+  surface: '#111111',
+  surfaceElevated: '#181818',
+  surfaceCard: '#111111',
+  surfaceCardHover: '#1c1c1c',
+  surfaceGlass: 'rgba(17, 17, 17, 0.95)',
 
-  // Sub-Zero Electric Cyan & Glacial Blues
-  primary: '#00F2FE', // Electric Cyan
-  primaryLight: '#E0FDFF',
-  primaryDark: '#00B8C4',
-  primaryGlow: 'rgba(0, 242, 254, 0.45)',
-  primaryGlowStrong: 'rgba(0, 242, 254, 0.75)',
+  // Electric Blue & Cyber-Sonic Accents
+  primary: '#2563eb', // Vibrant Electric Blue
+  primaryLight: '#3b82f6', // Light Blue Accent
+  primaryDark: '#1d4ed8', // Deep Blue
+  primaryGlow: 'rgba(37, 99, 235, 0.35)',
 
-  secondary: '#38BDF8', // Arctic Sky Blue
-  secondaryContainer: '#0284C7',
-  cyanRime: '#67E8F9',
+  // Cyan & Rime Highlights
+  secondary: '#38bdf8', // Arctic Sky Blue
+  secondaryGlow: 'rgba(56, 189, 248, 0.25)',
+  cyanAccent: '#06b6d4',
 
   // Gradient presets
+  gradientPrimary: ['#2563eb', '#3b82f6'] as const,
   gradientCyan: ['#00F2FE', '#38BDF8'] as const,
-  gradientIce: ['#00F2FE', '#38BDF8', '#67E8F9'] as const,
-  gradientOrb: ['#0284C7', '#00F2FE', '#F0F9FF'] as const,
-  gradientCard: ['#0E1829', '#142135'] as const,
-  gradientGlass: ['rgba(240, 249, 255, 0.08)', 'rgba(7, 11, 20, 0.75)'] as const,
+  gradientCard: ['#111111', '#181818'] as const,
+  gradientOrb: ['#1d4ed8', '#2563eb', '#38bdf8'] as const,
 
-  // Text & Typography
-  textPrimary: '#FFFFFF',
-  textFrost: '#E0F2FE',
-  textSecondary: '#94A9C0',
-  textMuted: '#4A6984',
-  textDark: '#002022',
+  // Text Hierarchy
+  textPrimary: '#ffffff',
+  textSecondary: '#a1a1aa',
+  textMuted: '#71717a',
+  textFrost: '#e2e8f0',
+  textDark: '#000000',
 
-  // Crystalline Borders & Outlines
-  border: 'rgba(0, 242, 254, 0.18)',
-  borderHighlight: 'rgba(0, 242, 254, 0.45)',
-  borderMuted: 'rgba(255, 255, 255, 0.08)',
+  // Crisp Flat Borders
+  border: '#262626',
+  borderLight: '#333333',
+  borderHighlight: 'rgba(59, 130, 246, 0.5)',
 
   // Status & Feedback
-  error: '#FF5555',
-  success: '#00F2FE',
-  warning: '#F59E0B',
+  error: '#ef4444',
+  success: '#10b981',
+  warning: '#f59e0b',
 };
 
 export const spacing = {
   xs: 4,
   sm: 8,
-  md: 16,
-  lg: 24,
-  xl: 32,
-  xxl: 40,
+  md: 14,
+  lg: 20,
+  xl: 28,
+  xxl: 36,
 };
 
 export const borderRadius = {
+  xs: 4,
   sm: 6,
-  md: 12,
-  lg: 16,
-  xl: 24,
+  md: 10,
+  lg: 14,
+  xl: 20,
   pill: 9999,
 };

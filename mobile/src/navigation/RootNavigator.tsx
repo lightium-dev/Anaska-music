@@ -32,7 +32,6 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
   return (
     <View style={[styles.tabBarContainer, { paddingBottom: safeBottom }]}>
       {state.routes.map((route: any, index: number) => {
-        const { options } = descriptors[route.key];
         const isFocused = state.index === index;
 
         const onPress = () => {
@@ -49,41 +48,6 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 
         const isDJMuse = route.name === 'ChatTab';
 
-        if (isDJMuse) {
-          return (
-            <TouchableOpacity
-              key={route.key}
-              onPress={onPress}
-              activeOpacity={0.85}
-              style={styles.djMuseTabItem}
-            >
-              {/* Outer Glowing Cyan Halo */}
-              <View style={styles.djMuseHaloWrapper}>
-                <LinearGradient
-                  colors={['#00F2FE', '#38BDF8', '#E0F2FE']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.djMuseHaloGradient}
-                >
-                  <View style={styles.djMuseInnerCircle}>
-                    <Ionicons
-                      name="sparkles"
-                      size={22}
-                      color={colors.primary}
-                      style={{
-                        textShadowColor: 'rgba(0, 242, 254, 0.7)',
-                        textShadowOffset: { width: 0, height: 0 },
-                        textShadowRadius: 8,
-                      }}
-                    />
-                  </View>
-                </LinearGradient>
-              </View>
-              <Text style={styles.djMuseLabel}>DJ Muse</Text>
-            </TouchableOpacity>
-          );
-        }
-
         let iconName: any = 'home';
         let label = 'Home';
 
@@ -93,9 +57,44 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
         } else if (route.name === 'SearchTab') {
           iconName = isFocused ? 'search' : 'search-outline';
           label = 'Search';
+        } else if (route.name === 'ChatTab') {
+          iconName = isFocused ? 'sparkles' : 'sparkles-outline';
+          label = 'DJ Muse';
         } else if (route.name === 'ProfileTab') {
           iconName = isFocused ? 'person' : 'person-outline';
           label = 'Profile';
+        }
+
+        if (isDJMuse) {
+          return (
+            <TouchableOpacity
+              key={route.key}
+              onPress={onPress}
+              activeOpacity={0.75}
+              style={styles.tabItem}
+            >
+              <View
+                style={[
+                  styles.djMuseBox,
+                  isFocused && styles.djMuseBoxActive,
+                ]}
+              >
+                <Ionicons
+                  name="sparkles"
+                  size={18}
+                  color={isFocused ? colors.primaryLight : colors.textSecondary}
+                />
+              </View>
+              <Text
+                style={[
+                  styles.tabLabel,
+                  isFocused ? styles.tabLabelActive : styles.tabLabelInactive,
+                ]}
+              >
+                {label}
+              </Text>
+            </TouchableOpacity>
+          );
         }
 
         return (
@@ -103,17 +102,17 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
             key={route.key}
             onPress={onPress}
             activeOpacity={0.7}
-            style={styles.standardTabItem}
+            style={styles.tabItem}
           >
             <Ionicons
               name={iconName}
-              size={22}
-              color={isFocused ? colors.primary : colors.textSecondary}
+              size={20}
+              color={isFocused ? colors.primaryLight : colors.textMuted}
             />
             <Text
               style={[
-                styles.standardTabLabel,
-                isFocused ? styles.standardTabLabelActive : styles.standardTabLabelInactive,
+                styles.tabLabel,
+                isFocused ? styles.tabLabelActive : styles.tabLabelInactive,
               ]}
             >
               {label}
@@ -242,74 +241,45 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-around',
     paddingTop: 8,
-    backgroundColor: 'rgba(7, 11, 20, 0.95)',
+    backgroundColor: '#000000',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0, 242, 254, 0.15)',
+    borderTopColor: '#262626',
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.6,
-    shadowRadius: 20,
-    elevation: 12,
   },
-  standardTabItem: {
+  tabItem: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 2,
+    paddingVertical: 3,
   },
-  standardTabLabel: {
+  tabLabel: {
     fontSize: 10,
-    marginTop: 3,
-    fontWeight: '600',
-  },
-  standardTabLabelActive: {
-    color: colors.primary,
-  },
-  standardTabLabelInactive: {
-    color: colors.textSecondary,
-  },
-  djMuseTabItem: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    top: -12,
-  },
-  djMuseHaloWrapper: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    padding: 2,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 18,
-    elevation: 10,
-  },
-  djMuseHaloGradient: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 26,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 2,
-  },
-  djMuseInnerCircle: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 24,
-    backgroundColor: '#070B14',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  djMuseLabel: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: colors.primary,
     marginTop: 2,
-    letterSpacing: 0.5,
+    fontWeight: '500',
+    letterSpacing: 0.2,
+  },
+  tabLabelActive: {
+    color: colors.primaryLight,
+    fontWeight: '700',
+  },
+  tabLabelInactive: {
+    color: colors.textMuted,
+  },
+  djMuseBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: '#181818',
+    borderWidth: 1,
+    borderColor: '#262626',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  djMuseBoxActive: {
+    borderColor: colors.primaryLight,
+    backgroundColor: 'rgba(37, 99, 235, 0.15)',
   },
 });

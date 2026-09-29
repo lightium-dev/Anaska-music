@@ -11,8 +11,8 @@ import {
   Modal,
   TextInput,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { colors, spacing, borderRadius } from '../constants/theme';
@@ -29,6 +29,20 @@ const isCustomAvatar = (uri?: string): boolean => {
     uri.startsWith('data:')
   );
 };
+
+const ALL_GENRES = [
+  'Synthwave',
+  'Cyberpunk',
+  'Electronic',
+  'Ambient',
+  'Lo-Fi',
+  'Techno',
+  'Rock',
+  'Metal',
+  'Jazz',
+  'Hip-Hop',
+  'House',
+];
 
 const AVATAR_PRESETS = [
   {
@@ -74,16 +88,42 @@ interface ProfileScreenProps {
 }
 
 export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
-  const { user, logout, updateAvatar } = useUserStore();
+  const { user, logout, updateAvatar, updateGenres } = useUserStore();
 
   const [spatialAudio, setSpatialAudio] = useState(true);
   const [smartTransitions, setSmartTransitions] = useState(true);
-  const [cryoEq, setCryoEq] = useState(true);
+  const [adaptiveMood, setAdaptiveMood] = useState(true);
+
+  // Active genres selection
+  const [selectedGenres, setSelectedGenres] = useState<string[]>(
+    user?.genrePreferences && user.genrePreferences.length > 0
+      ? user.genrePreferences
+      : ['Synthwave', 'Cyberpunk', 'Electronic', 'Ambient', 'Lo-Fi']
+  );
 
   // Avatar Modal State
   const [isAvatarModalVisible, setIsAvatarModalVisible] = useState(false);
   const [customAvatarUrl, setCustomAvatarUrl] = useState('');
   const [savingAvatar, setSavingAvatar] = useState(false);
+
+  const toggleGenre = (genre: string) => {
+    let next: string[];
+    if (selectedGenres.includes(genre)) {
+      if (selectedGenres.length === 1) {
+        Alert.alert('Genre Selection', 'Keep at least 1 genre active for DJ Muse recommendations.');
+        return;
+      }
+      next = selectedGenres.filter((g) => g !== genre);
+    } else {
+      next = [...selectedGenres, genre];
+    }
+    setSelectedGenres(next);
+    updateGenres(next);
+    apiRequest('/api/auth/profile', {
+      method: 'PUT',
+      body: JSON.stringify({ genrePreferences: next }),
+    }).catch(() => {});
+  };
 
   const handleSaveAvatar = async (url: string) => {
     try {
@@ -143,14 +183,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
     ]);
   };
 
-  const genres = user?.genrePreferences && user.genrePreferences.length > 0
-    ? user.genrePreferences
-    : ['Synthwave', 'Electronic', 'Ambient', 'Cyberpunk'];
-
   return (
     <View style={styles.container}>
-      <View style={styles.topAura} />
-
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Top Header */}
         <View style={styles.header}>
@@ -161,24 +195,21 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
 
           <TouchableOpacity
             style={styles.editProfileBtn}
-            onPress={() => navigation.navigate('GenreSelect', { isEditing: true })}
+            onPress={() => setIsAvatarModalVisible(true)}
             activeOpacity={0.8}
           >
-            <Ionicons name="pencil-outline" size={18} color={colors.primary} />
+            <Ionicons name="pencil-outline" size={16} color={colors.primary} />
           </TouchableOpacity>
         </View>
 
-        {/* Cyberpunk User Card with Glowing Avatar & Beacon */}
+        {/* Profile Card */}
         <View style={styles.profileCard}>
-          <TouchableOpacity
-            style={styles.avatarWrapper}
-            onPress={() => setIsAvatarModalVisible(true)}
-            activeOpacity={0.85}
-            accessibilityLabel="Change profile picture"
-          >
-            <LinearGradient
-              colors={['#00F2FE', '#38BDF8', '#91F1FF']}
-              style={styles.avatarRing}
+          {/* Avatar Ring */}
+          <View style={styles.avatarContainer}>
+            <TouchableOpacity
+              style={styles.avatarTouch}
+              onPress={() => setIsAvatarModalVisible(true)}
+              activeOpacity={0.85}
             >
               <Image
                 source={
@@ -188,292 +219,292 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
                 }
                 style={styles.avatarImg}
               />
-            </LinearGradient>
-
-            {/* Edit Avatar Camera Badge */}
-            <View style={styles.avatarEditBadge}>
-              <Ionicons name="camera" size={13} color="#002022" />
-            </View>
-
-            {/* Presence Beacon */}
-            <View style={styles.presenceBeacon}>
-              <View style={styles.presenceInner} />
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => setIsAvatarModalVisible(true)}
-            style={styles.changeAvatarHintBtn}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="camera-outline" size={13} color={colors.primary} />
-            <Text style={styles.changeAvatarHintText}>Change profile picture</Text>
-          </TouchableOpacity>
+            </TouchableOpacity>
+            <View style={styles.presenceBeacon} />
+          </View>
 
           <View style={styles.nameRow}>
             <Text style={styles.displayName}>{user?.username || 'Alex Chen'}</Text>
-            <Ionicons name="checkmark-circle" size={18} color={colors.primary} />
+            <Ionicons name="checkmark-circle" size={17} color={colors.primary} />
           </View>
 
-          <Text style={styles.handleText}>@{user?.username?.toLowerCase().replace(/\s+/g, '_') || 'astral_tempo'}</Text>
+          <Text style={styles.handleText}>
+            @{user?.username?.toLowerCase().replace(/\s+/g, '_') || 'astral_tempo'}
+          </Text>
 
-          {/* Audio Tier Badge */}
-          <View style={styles.tierBadge}>
-            <MaterialCommunityIcons name="waveform" size={14} color={colors.primary} />
+          {/* Audio Tier Chip */}
+          <View style={styles.tierChip}>
+            <MaterialCommunityIcons name="waveform" size={13} color={colors.primary} />
             <Text style={styles.tierText}>Anaska Hi-Fi Master • AI Co-Pilot Active</Text>
           </View>
 
-          {/* Listening Stats Row */}
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statVal}>148h</Text>
-              <Text style={styles.statLab}>Streamed</Text>
+          {/* 3 Stats Columns */}
+          <View style={styles.statsGrid}>
+            <View style={styles.statCol}>
+              <Ionicons name="library-outline" size={16} color={colors.primary} />
+              <Text style={styles.statValue}>1,420</Text>
+              <Text style={styles.statLabel}>Tracks</Text>
             </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={styles.statVal}>{genres.length}</Text>
-              <Text style={styles.statLab}>Frequencies</Text>
+            <View style={styles.statCol}>
+              <Ionicons name="sparkles-outline" size={16} color={colors.primary} />
+              <Text style={styles.statValue}>84h</Text>
+              <Text style={styles.statLabel}>DJ Muse</Text>
             </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={styles.statVal}>98%</Text>
-              <Text style={styles.statLab}>AI Synergy</Text>
+            <View style={styles.statCol}>
+              <Ionicons name="speedometer-outline" size={16} color={colors.primary} />
+              <Text style={styles.statValue}>Synthwave</Text>
+              <Text style={styles.statLabel}>Top Genre</Text>
             </View>
           </View>
         </View>
 
         {/* Sonic Frequencies Section */}
-        <View style={styles.sectionCard}>
+        <View style={styles.sectionBlock}>
           <View style={styles.sectionHeader}>
             <View style={styles.sectionTitleRow}>
-              <Ionicons name="radio-outline" size={18} color={colors.primary} />
-              <Text style={styles.sectionTitle}>Preferred Frequencies</Text>
+              <Ionicons name="options-outline" size={16} color={colors.primary} />
+              <Text style={styles.sectionTitle}>YOUR SONIC FREQUENCIES</Text>
             </View>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('GenreSelect', { isEditing: true })}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.editActionText}>Tune Frequencies</Text>
+            <Text style={styles.sectionSubtitle}>
+              Tap to adjust the genres DJ Muse prioritizes in your daily stream.
+            </Text>
+          </View>
+
+          <View style={styles.genresWrap}>
+            {ALL_GENRES.map((g) => {
+              const active = selectedGenres.includes(g);
+              return (
+                <TouchableOpacity
+                  key={g}
+                  style={[styles.genreChip, active && styles.genreChipActive]}
+                  onPress={() => toggleGenre(g)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.genreChipText, active && styles.genreChipTextActive]}>
+                    {g}
+                  </Text>
+                  {active && <Ionicons name="checkmark" size={13} color="#FFFFFF" />}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* AI Co-Pilot & Audio Engine Section */}
+        <View style={styles.sectionBlock}>
+          <View style={styles.sectionTitleRow}>
+            <Ionicons name="hardware-chip-outline" size={16} color={colors.primary} />
+            <Text style={styles.sectionTitle}>AI CO-PILOT & AUDIO ENGINE</Text>
+          </View>
+
+          <View style={styles.cardContainer}>
+            {/* Setting 1: Smart DJ Muse Transitions */}
+            <View style={styles.settingItem}>
+              <View style={styles.settingLeft}>
+                <View style={styles.iconSquare}>
+                  <Ionicons name="shuffle-outline" size={18} color={colors.primary} />
+                </View>
+                <View style={styles.settingTextCol}>
+                  <Text style={styles.settingHeading}>Smart DJ Muse Transitions</Text>
+                  <Text style={styles.settingDesc}>Harmonic crossfade & live BPM sync</Text>
+                </View>
+              </View>
+              <Switch
+                value={smartTransitions}
+                onValueChange={setSmartTransitions}
+                trackColor={{ false: '#262626', true: colors.primary }}
+                thumbColor={smartTransitions ? '#000000' : '#888888'}
+              />
+            </View>
+
+            {/* Setting 2: Lossless Spatial Audio */}
+            <View style={styles.settingItem}>
+              <View style={styles.settingLeft}>
+                <View style={styles.iconSquare}>
+                  <Ionicons name="volume-high-outline" size={18} color={colors.primary} />
+                </View>
+                <View style={styles.settingTextCol}>
+                  <Text style={styles.settingHeading}>Lossless Spatial Audio</Text>
+                  <Text style={styles.settingDesc}>Master fidelity (96kHz / 24-bit)</Text>
+                </View>
+              </View>
+              <Switch
+                value={spatialAudio}
+                onValueChange={setSpatialAudio}
+                trackColor={{ false: '#262626', true: colors.primary }}
+                thumbColor={spatialAudio ? '#000000' : '#888888'}
+              />
+            </View>
+
+            {/* Setting 3: Adaptive Mood Detection */}
+            <View style={styles.settingItem}>
+              <View style={styles.settingLeft}>
+                <View style={styles.iconSquare}>
+                  <Ionicons name="happy-outline" size={18} color={colors.primary} />
+                </View>
+                <View style={styles.settingTextCol}>
+                  <Text style={styles.settingHeading}>Adaptive Mood Detection</Text>
+                  <Text style={styles.settingDesc}>Real-time biometrics & listening tempo</Text>
+                </View>
+              </View>
+              <Switch
+                value={adaptiveMood}
+                onValueChange={setAdaptiveMood}
+                trackColor={{ false: '#262626', true: colors.primary }}
+                thumbColor={adaptiveMood ? '#000000' : '#888888'}
+              />
+            </View>
+          </View>
+        </View>
+
+        {/* Account & Hardware Section */}
+        <View style={styles.sectionBlock}>
+          <View style={styles.sectionTitleRow}>
+            <Ionicons name="headset-outline" size={16} color={colors.primary} />
+            <Text style={styles.sectionTitle}>ACCOUNT & HARDWARE</Text>
+          </View>
+
+          <View style={styles.cardContainer}>
+            {/* Row 1: Connected Devices */}
+            <TouchableOpacity style={styles.settingItem} activeOpacity={0.7}>
+              <View style={styles.settingLeft}>
+                <View style={styles.iconSquare}>
+                  <Ionicons name="headset-outline" size={18} color={colors.primary} />
+                </View>
+                <View style={styles.settingTextCol}>
+                  <View style={styles.rowInline}>
+                    <Text style={styles.settingHeading}>Connected Devices</Text>
+                    <View style={styles.statusBadge}>
+                      <Text style={styles.statusBadgeText}>ACTIVE</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.settingDesc}>Anaska Spatial Buds Pro</Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color="#888888" />
+            </TouchableOpacity>
+
+            {/* Row 2: Download Storage */}
+            <TouchableOpacity style={styles.settingItem} activeOpacity={0.7}>
+              <View style={styles.settingLeft}>
+                <View style={styles.iconSquare}>
+                  <Ionicons name="server-outline" size={18} color={colors.primary} />
+                </View>
+                <View style={styles.settingTextCol}>
+                  <Text style={styles.settingHeading}>Download Storage & Cache</Text>
+                  <Text style={styles.settingDesc}>14.2 GB of Offline Master Audio</Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color="#888888" />
+            </TouchableOpacity>
+
+            {/* Row 3: Subscription Tier */}
+            <TouchableOpacity style={styles.settingItem} activeOpacity={0.7}>
+              <View style={styles.settingLeft}>
+                <View style={styles.iconSquare}>
+                  <Ionicons name="ribbon-outline" size={18} color={colors.primary} />
+                </View>
+                <View style={styles.settingTextCol}>
+                  <View style={styles.rowInline}>
+                    <Text style={styles.settingHeading}>Subscription Tier</Text>
+                    <View style={styles.statusBadge}>
+                      <Text style={styles.statusBadgeText}>VIP</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.settingDesc}>Anaska Neural VIP • $12.99/mo</Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color="#888888" />
             </TouchableOpacity>
           </View>
-
-          <View style={styles.chipsRow}>
-            {genres.map((g) => (
-              <View key={g} style={styles.genreChip}>
-                <Ionicons name="sparkles" size={10} color={colors.primary} />
-                <Text style={styles.genreChipText}>{g}</Text>
-              </View>
-            ))}
-          </View>
         </View>
 
-        {/* Audio Engine & System Settings */}
-        <View style={styles.sectionCard}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionTitleRow}>
-              <Ionicons name="settings-outline" size={18} color={colors.primary} />
-              <Text style={styles.sectionTitle}>Profile & System Settings</Text>
-            </View>
-          </View>
-
-          {/* Setting Row: Profile Avatar */}
-          <TouchableOpacity
-            style={styles.settingRow}
-            onPress={() => setIsAvatarModalVisible(true)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.settingLeft}>
-              <View style={styles.settingIconBox}>
-                <Ionicons name="image-outline" size={18} color={colors.primary} />
-              </View>
-              <View>
-                <Text style={styles.settingTitle}>Profile Avatar</Text>
-                <Text style={styles.settingSubtitle}>Change your visual identity & photo</Text>
-              </View>
-            </View>
-            <View style={styles.settingRight}>
-              <View style={styles.miniAvatarWrapper}>
-                <Image
-                  source={
-                    user?.avatar && isCustomAvatar(user.avatar)
-                      ? { uri: user.avatar }
-                      : require('../../assets/avatar.png')
-                  }
-                  style={styles.miniAvatarImg}
-                />
-              </View>
-              <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
-            </View>
-          </TouchableOpacity>
-
-          {/* Toggle 1: Spatial Audio */}
-          <View style={styles.toggleRow}>
-            <View style={styles.toggleTextCol}>
-              <Text style={styles.toggleTitle}>Lossless Spatial Audio</Text>
-              <Text style={styles.toggleSubtitle}>24-bit / 96kHz cryo-acoustic rendering</Text>
-            </View>
-            <Switch
-              value={spatialAudio}
-              onValueChange={setSpatialAudio}
-              trackColor={{ false: '#1A283F', true: colors.secondaryContainer }}
-              thumbColor={spatialAudio ? colors.primary : '#94A9C0'}
-            />
-          </View>
-
-          {/* Toggle 2: Smart AI Transitions */}
-          <View style={styles.toggleRow}>
-            <View style={styles.toggleTextCol}>
-              <Text style={styles.toggleTitle}>Smart AI Transitions</Text>
-              <Text style={styles.toggleSubtitle}>DJ Muse harmonic beat-matching</Text>
-            </View>
-            <Switch
-              value={smartTransitions}
-              onValueChange={setSmartTransitions}
-              trackColor={{ false: '#1A283F', true: colors.secondaryContainer }}
-              thumbColor={smartTransitions ? colors.primary : '#94A9C0'}
-            />
-          </View>
-
-          {/* Toggle 3: Cryo Dynamic EQ */}
-          <View style={styles.toggleRow}>
-            <View style={styles.toggleTextCol}>
-              <Text style={styles.toggleTitle}>Dynamic Cryo EQ</Text>
-              <Text style={styles.toggleSubtitle}>Sub-zero frequency optimization</Text>
-            </View>
-            <Switch
-              value={cryoEq}
-              onValueChange={setCryoEq}
-              trackColor={{ false: '#1A283F', true: colors.secondaryContainer }}
-              thumbColor={cryoEq ? colors.primary : '#94A9C0'}
-            />
-          </View>
-
-          {/* Hardware Device */}
-          <View style={styles.hardwareCard}>
-            <View style={styles.hardwareLeft}>
-              <Ionicons name="headset" size={20} color={colors.primary} />
-              <View>
-                <Text style={styles.hardwareName}>Anaska Spatial Buds Pro</Text>
-                <Text style={styles.hardwareStatus}>Connected • Battery 94%</Text>
-              </View>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
-          </View>
-        </View>
-
-        {/* Log Out Button */}
-        <TouchableOpacity
-          style={styles.logoutButton}
-          onPress={handleLogout}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="log-out-outline" size={18} color={colors.error} />
-          <Text style={styles.logoutText}>Disconnect Frequency (Log Out)</Text>
+        {/* Log Out Action */}
+        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.8}>
+          <Ionicons name="log-out-outline" size={18} color="#888888" />
+          <Text style={styles.logoutText}>Log Out of Anaska</Text>
         </TouchableOpacity>
+
+        {/* Footer Build Info */}
+        <View style={styles.footerBlock}>
+          <Text style={styles.footerVersion}>ANASKA MOBILE v2.4.0 • NEURAL ENGINE v4.2</Text>
+          <Text style={styles.footerSub}>Spatial Synthetics Lab • Audio Pipeline Calibrated</Text>
+        </View>
       </ScrollView>
 
-      {/* Avatar Selection & Setting Modal */}
+      {/* Avatar Picker Modal */}
       <Modal
         visible={isAvatarModalVisible}
         transparent
         animationType="fade"
         onRequestClose={() => setIsAvatarModalVisible(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <View>
-                <Text style={styles.modalMeta}>SETTING</Text>
-                <Text style={styles.modalTitle}>Select Profile Avatar</Text>
-              </View>
+              <Text style={styles.modalTitle}>Select Avatar</Text>
               <TouchableOpacity
                 onPress={() => setIsAvatarModalVisible(false)}
-                style={styles.modalCloseBtn}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
                 <Ionicons name="close" size={20} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} style={styles.modalScroll}>
-              {/* Choose from Phone Storage */}
-              <TouchableOpacity
-                style={styles.devicePickButton}
-                onPress={pickImageFromDevice}
-                activeOpacity={0.85}
-              >
-                <LinearGradient
-                  colors={['#00F2FE', '#38BDF8']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.devicePickGradient}
-                >
-                  <Ionicons name="images" size={18} color="#002022" />
-                  <Text style={styles.devicePickText}>Choose from Phone Storage</Text>
-                </LinearGradient>
-              </TouchableOpacity>
+            {/* Pick from Phone Storage Button */}
+            <TouchableOpacity
+              style={styles.storagePickBtn}
+              onPress={pickImageFromDevice}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="image-outline" size={18} color="#FFFFFF" />
+              <Text style={styles.storagePickBtnText}>Choose from Phone Storage</Text>
+            </TouchableOpacity>
 
-              <Text style={styles.modalSectionLabel}>PRESET SONIC PERSONAS</Text>
-              <View style={styles.presetsGrid}>
-                {AVATAR_PRESETS.map((item) => {
-                  const isCurrent =
-                    (!item.uri && (!user?.avatar || !user.avatar.startsWith('http'))) ||
-                    (item.uri && user?.avatar === item.uri);
+            <Text style={styles.modalSubHeader}>Or select a preset persona:</Text>
 
-                  return (
-                    <TouchableOpacity
-                      key={item.id}
-                      style={[styles.presetCard, isCurrent && styles.presetCardActive]}
-                      onPress={() => handleSaveAvatar(item.uri)}
-                      activeOpacity={0.8}
-                    >
-                      <View style={styles.presetImgRing}>
-                        <Image
-                          source={item.uri ? { uri: item.uri } : require('../../assets/avatar.png')}
-                          style={styles.presetImg}
-                        />
-                        {isCurrent && (
-                          <View style={styles.presetActiveCheck}>
-                            <Ionicons name="checkmark-sharp" size={12} color="#002022" />
-                          </View>
-                        )}
-                      </View>
-                      <Text style={[styles.presetTitle, isCurrent && styles.presetTitleActive]}>
-                        {item.title}
-                      </Text>
-                      <Text style={styles.presetSubtitle}>{item.subtitle}</Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-
-              <Text style={styles.modalSectionLabel}>OR CUSTOM IMAGE URL</Text>
-              <View style={styles.customInputRow}>
-                <TextInput
-                  style={styles.customInput}
-                  placeholder="Paste direct image URL..."
-                  placeholderTextColor={colors.textMuted}
-                  value={customAvatarUrl}
-                  onChangeText={setCustomAvatarUrl}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.presetsList}>
+              {AVATAR_PRESETS.map((preset) => (
                 <TouchableOpacity
-                  style={[
-                    styles.saveCustomBtn,
-                    (!customAvatarUrl.trim() || savingAvatar) && styles.saveCustomBtnDisabled,
-                  ]}
-                  onPress={() => handleSaveAvatar(customAvatarUrl.trim())}
-                  disabled={!customAvatarUrl.trim() || savingAvatar}
+                  key={preset.id}
+                  style={styles.presetItem}
+                  onPress={() => handleSaveAvatar(preset.uri)}
+                  activeOpacity={0.8}
                 >
-                  {savingAvatar ? (
-                    <ActivityIndicator size="small" color="#002022" />
-                  ) : (
-                    <Text style={styles.saveCustomBtnText}>Apply</Text>
-                  )}
+                  <Image
+                    source={
+                      preset.uri
+                        ? { uri: preset.uri }
+                        : require('../../assets/avatar.png')
+                    }
+                    style={styles.presetImg}
+                  />
+                  <Text style={styles.presetTitle} numberOfLines={1}>{preset.title}</Text>
                 </TouchableOpacity>
-              </View>
+              ))}
             </ScrollView>
+
+            <View style={styles.urlInputRow}>
+              <TextInput
+                style={styles.urlInput}
+                placeholder="Or paste image URL..."
+                placeholderTextColor={colors.textMuted}
+                value={customAvatarUrl}
+                onChangeText={setCustomAvatarUrl}
+              />
+              <TouchableOpacity
+                style={styles.urlSaveBtn}
+                onPress={() => customAvatarUrl.trim() && handleSaveAvatar(customAvatarUrl.trim())}
+                disabled={!customAvatarUrl.trim() || savingAvatar}
+                activeOpacity={0.8}
+              >
+                {savingAvatar ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.urlSaveText}>Save</Text>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -484,105 +515,78 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
-  },
-  topAura: {
-    position: 'absolute',
-    top: -80,
-    left: -60,
-    width: 320,
-    height: 320,
-    borderRadius: 160,
-    backgroundColor: 'rgba(0, 242, 254, 0.08)',
+    backgroundColor: '#000000',
   },
   scroll: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl + 10,
-    paddingBottom: 240, // Generous clearance so the logout button appears completely above the floating mini player bar
-    gap: 16,
+    paddingTop: Platform.OS === 'ios' ? 52 : 24,
+    paddingBottom: 110,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.xs,
+    marginBottom: 16,
   },
   metaLabel: {
     color: colors.primary,
     fontSize: 10,
     fontWeight: '800',
-    letterSpacing: 1.5,
+    letterSpacing: 1.2,
   },
   pageTitle: {
-    color: colors.textPrimary,
-    fontSize: 24,
-    fontWeight: '800',
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: '700',
     letterSpacing: -0.3,
     marginTop: 2,
   },
   editProfileBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(14, 24, 42, 0.9)',
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.sm,
+    backgroundColor: '#181818',
     borderWidth: 1,
-    borderColor: 'rgba(0, 242, 254, 0.3)',
+    borderColor: '#262626',
     alignItems: 'center',
     justifyContent: 'center',
   },
   profileCard: {
-    backgroundColor: 'rgba(11, 18, 32, 0.9)',
-    borderRadius: borderRadius.xl,
-    padding: spacing.lg,
+    backgroundColor: '#111111',
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: 'rgba(0, 242, 254, 0.25)',
+    borderColor: '#262626',
+    padding: 20,
     alignItems: 'center',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 18,
-    elevation: 6,
+    marginBottom: 20,
   },
-  avatarWrapper: {
+  avatarContainer: {
     position: 'relative',
-    marginBottom: spacing.sm,
+    marginBottom: 12,
   },
-  avatarRing: {
-    width: 86,
-    height: 86,
-    borderRadius: 43,
-    padding: 3,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 16,
-    elevation: 8,
+  avatarTouch: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 2,
+    borderColor: colors.primary,
+    overflow: 'hidden',
+    backgroundColor: '#181818',
   },
   avatarImg: {
     width: '100%',
     height: '100%',
-    borderRadius: 40,
   },
   presenceBeacon: {
     position: 'absolute',
     bottom: 2,
     right: 2,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: '#070B14',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  presenceInner: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
     backgroundColor: colors.primary,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
-    shadowRadius: 6,
+    borderWidth: 2,
+    borderColor: '#111111',
   },
   nameRow: {
     flexDirection: 'row',
@@ -590,442 +594,301 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   displayName: {
-    color: colors.textPrimary,
-    fontSize: 20,
-    fontWeight: '800',
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
   },
   handleText: {
-    color: colors.textSecondary,
-    fontSize: 13,
+    color: '#888888',
+    fontSize: 12,
     marginTop: 2,
   },
-  tierBadge: {
+  tierChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginTop: spacing.sm,
     paddingHorizontal: 12,
     paddingVertical: 5,
-    borderRadius: borderRadius.pill,
-    backgroundColor: 'rgba(0, 242, 254, 0.1)',
+    borderRadius: borderRadius.xs,
+    backgroundColor: '#181818',
     borderWidth: 1,
-    borderColor: 'rgba(0, 242, 254, 0.3)',
+    borderColor: '#262626',
+    marginTop: 12,
   },
   tierText: {
-    color: colors.textFrost,
+    color: '#888888',
     fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.3,
+    fontWeight: '500',
   },
-  statsRow: {
+  statsGrid: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
     width: '100%',
-    marginTop: spacing.lg,
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0, 242, 254, 0.12)',
+    gap: 8,
+    marginTop: 18,
   },
-  statItem: {
+  statCol: {
+    flex: 1,
     alignItems: 'center',
+    backgroundColor: '#181818',
+    borderRadius: borderRadius.xs,
+    borderWidth: 1,
+    borderColor: '#262626',
+    paddingVertical: 12,
   },
-  statVal: {
-    color: colors.textPrimary,
-    fontSize: 18,
-    fontWeight: '800',
+  statValue: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+    marginTop: 4,
   },
-  statLab: {
-    color: colors.textSecondary,
-    fontSize: 11,
+  statLabel: {
+    color: '#888888',
+    fontSize: 10,
     marginTop: 2,
   },
-  statDivider: {
-    width: 1,
-    height: 24,
-    backgroundColor: 'rgba(0, 242, 254, 0.15)',
-  },
-  sectionCard: {
-    backgroundColor: 'rgba(11, 18, 32, 0.85)',
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 242, 254, 0.2)',
+  sectionBlock: {
+    marginBottom: 20,
   },
   sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.sm,
+    marginBottom: 10,
   },
   sectionTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
+    marginBottom: 4,
   },
   sectionTitle: {
-    color: colors.textPrimary,
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  editActionText: {
-    color: colors.primary,
+    color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '700',
+    letterSpacing: 0.8,
   },
-  chipsRow: {
+  sectionSubtitle: {
+    color: '#888888',
+    fontSize: 11,
+  },
+  genresWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    marginTop: 4,
+    paddingTop: 4,
   },
   genreChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 6,
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: borderRadius.pill,
-    backgroundColor: 'rgba(14, 24, 42, 0.8)',
+    paddingVertical: 7,
+    borderRadius: borderRadius.xs,
+    backgroundColor: '#181818',
     borderWidth: 1,
-    borderColor: 'rgba(0, 242, 254, 0.25)',
+    borderColor: '#262626',
+  },
+  genreChipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   genreChipText: {
-    color: colors.textFrost,
+    color: '#888888',
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '500',
   },
-  toggleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+  genreChipTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
-  toggleTextCol: {
-    flex: 1,
-    marginRight: 12,
-  },
-  toggleTitle: {
-    color: colors.textPrimary,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  toggleSubtitle: {
-    color: colors.textSecondary,
-    fontSize: 11,
-    marginTop: 2,
-  },
-  hardwareCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 12,
+  cardContainer: {
+    backgroundColor: '#111111',
     borderRadius: borderRadius.md,
-    backgroundColor: 'rgba(14, 24, 42, 0.85)',
     borderWidth: 1,
-    borderColor: 'rgba(0, 242, 254, 0.2)',
-    marginTop: 12,
-  },
-  hardwareLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  hardwareName: {
-    color: colors.textPrimary,
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  hardwareStatus: {
-    color: colors.secondary,
-    fontSize: 11,
-    marginTop: 2,
-  },
-  logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderColor: '#262626',
+    padding: 8,
     gap: 8,
-    paddingVertical: 14,
-    borderRadius: borderRadius.pill,
-    backgroundColor: 'rgba(255, 85, 85, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 85, 85, 0.35)',
-    marginTop: 4,
-  },
-  logoutText: {
-    color: colors.error,
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  avatarEditBadge: {
-    position: 'absolute',
-    bottom: -2,
-    right: -2,
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#070B14',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.9,
-    shadowRadius: 6,
-    elevation: 6,
-  },
-  changeAvatarHintBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
     marginTop: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: borderRadius.pill,
-    backgroundColor: 'rgba(0, 242, 254, 0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 242, 254, 0.25)',
   },
-  changeAvatarHintText: {
-    color: colors.primary,
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  settingRow: {
+  settingItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: '#181818',
+    borderRadius: borderRadius.xs,
+    borderWidth: 1,
+    borderColor: '#262626',
+    padding: 12,
   },
   settingLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
     flex: 1,
+    marginRight: 10,
   },
-  settingIconBox: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: 'rgba(0, 242, 254, 0.1)',
+  iconSquare: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.xs,
+    backgroundColor: '#111111',
+    borderWidth: 1,
+    borderColor: '#262626',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 242, 254, 0.2)',
   },
-  settingTitle: {
-    color: colors.textPrimary,
-    fontSize: 14,
+  settingTextCol: {
+    flex: 1,
+  },
+  settingHeading: {
+    color: '#FFFFFF',
+    fontSize: 13,
     fontWeight: '600',
   },
-  settingSubtitle: {
-    color: colors.textSecondary,
+  settingDesc: {
+    color: '#888888',
     fontSize: 11,
     marginTop: 2,
   },
-  settingRight: {
+  rowInline: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
+  },
+  statusBadge: {
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: borderRadius.xs,
+    backgroundColor: 'rgba(37, 99, 235, 0.2)',
+    borderWidth: 1,
+    borderColor: '#262626',
+  },
+  statusBadgeText: {
+    color: colors.primary,
+    fontSize: 9,
+    fontWeight: '700',
+  },
+  logoutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: 8,
+    backgroundColor: '#181818',
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
+    borderColor: '#262626',
+    paddingVertical: 14,
+    marginBottom: 20,
   },
-  miniAvatarWrapper: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    overflow: 'hidden',
-    borderWidth: 1.5,
-    borderColor: 'rgba(0, 242, 254, 0.6)',
-    backgroundColor: '#070B14',
+  logoutText: {
+    color: '#888888',
+    fontSize: 13,
+    fontWeight: '600',
   },
-  miniAvatarImg: {
-    width: '100%',
-    height: '100%',
+  footerBlock: {
+    alignItems: 'center',
+    paddingBottom: 20,
   },
-  modalOverlay: {
+  footerVersion: {
+    color: '#888888',
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+  },
+  footerSub: {
+    color: '#555555',
+    fontSize: 10,
+    marginTop: 2,
+  },
+  modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(3, 7, 18, 0.85)',
+    backgroundColor: 'rgba(0,0,0,0.85)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: spacing.md,
-  },
-  modalCard: {
-    width: '100%',
-    maxHeight: '85%',
-    backgroundColor: '#0B132B',
-    borderRadius: borderRadius.xl,
     padding: spacing.lg,
+  },
+  modalContent: {
+    width: '100%',
+    backgroundColor: '#111111',
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: 'rgba(0, 242, 254, 0.3)',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 24,
-    elevation: 12,
+    borderColor: '#262626',
+    padding: 18,
   },
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.md,
-  },
-  modalMeta: {
-    color: colors.primary,
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1.5,
+    marginBottom: 16,
   },
   modalTitle: {
-    color: colors.textPrimary,
-    fontSize: 18,
-    fontWeight: '800',
-    marginTop: 2,
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
   },
-  modalCloseBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalScroll: {
-    marginTop: spacing.xs,
-  },
-  devicePickButton: {
-    borderRadius: borderRadius.md,
-    overflow: 'hidden',
-    marginBottom: spacing.md,
-    marginTop: 4,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  devicePickGradient: {
+  storagePickBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.xs,
     paddingVertical: 12,
-    paddingHorizontal: 16,
+    marginBottom: 16,
   },
-  devicePickText: {
-    color: '#002022',
-    fontWeight: '800',
+  storagePickBtnText: {
+    color: '#FFFFFF',
     fontSize: 13,
-    letterSpacing: 0.2,
+    fontWeight: '700',
   },
-  modalSectionLabel: {
-    color: colors.secondary,
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1,
-    marginTop: spacing.sm,
-    marginBottom: spacing.sm,
+  modalSubHeader: {
+    color: '#888888',
+    fontSize: 11,
+    marginBottom: 10,
   },
-  presetsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    justifyContent: 'space-between',
+  presetsList: {
+    marginBottom: 16,
   },
-  presetCard: {
-    width: '48%',
-    backgroundColor: 'rgba(14, 24, 42, 0.9)',
-    borderRadius: borderRadius.md,
-    padding: 10,
+  presetItem: {
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 242, 254, 0.15)',
-  },
-  presetCardActive: {
-    borderColor: colors.primary,
-    backgroundColor: 'rgba(0, 242, 254, 0.12)',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  presetImgRing: {
-    position: 'relative',
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    borderWidth: 2,
-    borderColor: 'rgba(0, 242, 254, 0.4)',
-    overflow: 'hidden',
-    marginBottom: 6,
+    marginRight: 12,
+    width: 60,
   },
   presetImg: {
-    width: '100%',
-    height: '100%',
-  },
-  presetActiveCheck: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 1,
+    borderColor: '#262626',
+    marginBottom: 4,
   },
   presetTitle: {
-    color: colors.textPrimary,
-    fontSize: 12,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  presetTitleActive: {
-    color: colors.primary,
-  },
-  presetSubtitle: {
-    color: colors.textSecondary,
+    color: '#FFFFFF',
     fontSize: 10,
     textAlign: 'center',
-    marginTop: 2,
   },
-  customInputRow: {
+  urlInputRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     gap: 8,
-    marginTop: 4,
-    marginBottom: spacing.md,
   },
-  customInput: {
+  urlInput: {
     flex: 1,
-    backgroundColor: 'rgba(14, 24, 42, 0.9)',
-    borderRadius: borderRadius.md,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    color: colors.textPrimary,
-    fontSize: 12,
+    backgroundColor: '#181818',
+    borderRadius: borderRadius.xs,
     borderWidth: 1,
-    borderColor: 'rgba(0, 242, 254, 0.2)',
-  },
-  saveCustomBtn: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: borderRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  saveCustomBtnDisabled: {
-    opacity: 0.4,
-  },
-  saveCustomBtnText: {
-    color: '#002022',
-    fontWeight: '800',
+    borderColor: '#262626',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    color: '#FFFFFF',
     fontSize: 12,
+  },
+  urlSaveBtn: {
+    backgroundColor: '#262626',
+    borderRadius: borderRadius.xs,
+    paddingHorizontal: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  urlSaveText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
