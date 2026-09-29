@@ -131,8 +131,17 @@ export const SearchScreen: React.FC = () => {
 
       {/* Header & Search Input */}
       <View style={styles.searchHeader}>
-        <Text style={styles.metaLabel}>DISCOVERY ENGINE</Text>
-        <Text style={styles.pageTitle}>Search Frequencies</Text>
+        <View style={styles.titleWithLogoRow}>
+          <Image
+            source={require('../../assets/logo.png')}
+            style={styles.headerLogo}
+            resizeMode="contain"
+          />
+          <View>
+            <Text style={styles.metaLabel}>DISCOVERY ENGINE</Text>
+            <Text style={styles.pageTitle}>Search Frequencies</Text>
+          </View>
+        </View>
 
         <View style={styles.searchBox}>
           <Ionicons name="search" size={20} color={colors.primary} style={styles.searchIcon} />
@@ -233,6 +242,17 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xl + 10,
     paddingBottom: spacing.sm,
   },
+  titleWithLogoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: spacing.md,
+  },
+  headerLogo: {
+    width: 38,
+    height: 38,
+    borderRadius: 9,
+  },
   metaLabel: {
     color: colors.primary,
     fontSize: 10,
@@ -245,7 +265,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: -0.3,
     marginTop: 2,
-    marginBottom: spacing.md,
   },
   searchBox: {
     flexDirection: 'row',
