@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { Response } from 'express';
 import { pool } from '../db';
+import { musicService } from './MusicService';
 
 export interface ChatSessionRecord {
   id: string;
@@ -190,7 +191,41 @@ export class AIAssistantService {
       params = [];
     }
 
+    // Extract potential search keywords by stripping common intent prefixes
+    const searchTarget = userMessage
+      .replace(/\b(can you|please|could you|i want to|i need|hey dj muse|dj muse)\b/gi, '')
+      .replace(/\b(play me|play some|play|stream|listen to|put on|spin|curate a playlist of|curate a playlist|make a playlist of|make a playlist|make a|create a playlist of|create a playlist|recommend songs like|recommend songs)\b/gi, '')
+      .trim();
+
+    if (searchTarget.length > 1 && genreFilter.length === 0) {
+      playlistTitle = `🎧 ${searchTarget} Selection`;
+      playlistDesc = `Real artist frequencies curated live by DJ Muse`;
+    }
+
     try {
+      // 1. If user asked for a specific artist/song, query live real catalog
+      if (searchTarget.length > 2) {
+        const liveTracks = await musicService.searchExternalTracks(searchTarget, genreFilter[0], 6);
+        if (liveTracks.length > 0) {
+          return {
+            type: isPlayDirect ? 'play_track' : 'playlist',
+            title: playlistTitle,
+            description: playlistDesc,
+            tracks: liveTracks.map((t) => ({
+              id: t.id,
+              title: t.title,
+              artist: t.artist,
+              genreId: t.genre_id,
+              audioUrl: t.audio_url,
+              coverUrl: t.cover_url,
+              duration: t.duration,
+            })),
+            autoPlay: isPlayDirect,
+          };
+        }
+      }
+
+      // 2. Query local DB tracks
       const res = await pool.query(tracksQuery, params);
       if (res.rowCount && res.rowCount > 0) {
         const formattedTracks = res.rows.map((r: any) => ({
