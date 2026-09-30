@@ -1,0 +1,113 @@
+<!DOCTYPE html><html class="dark" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport">
+<meta content="mobile_tab" name="shell-type">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+    @layer base {
+      html, body {
+        width: 100vw;
+        margin: 0;
+        padding: 0;
+        background-color: #0f172a;
+        color: #e2e8f0;
+      }
+      body {
+        overscroll-behavior-y: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .pb-safe {
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      .pt-safe {
+        padding-top: env(safe-area-inset-top, 0px);
+      }
+    }
+    ::-webkit-scrollbar {
+      display: none;
+    }
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            brand: "#06b6d4",
+            "brand-hover": "#0891b2"
+          },
+          fontFamily: {
+            sans: ["Geist", "sans-serif"],
+            mono: ["JetBrains Mono", "monospace"]
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-black font-sans text-white flex flex-col min-h-screen antialiased">
+<!-- Flat Minimal Top Header -->
+<header class="fixed top-0 w-full z-50 pt-safe bg-black border-b border-[#262626]"><div class="h-14 px-4 flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-md bg-[#181818] border border-[#262626] flex items-center justify-center text-[#3b82f6]"><span class="material-symbols-outlined text-base">auto_awesome</span></div><div><div class="flex items-center gap-1.5 leading-none"><span class="font-semibold text-white text-sm tracking-tight">DJ Muse</span><span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#181818] text-[#a1a1aa] border border-[#262626]">v4.2</span></div><span class="text-[11px] text-[#888888]">Harmonic Engine Online</span></div></div><div class="flex items-center gap-2"><button class="w-9 h-9 rounded-md flex items-center justify-center text-[#888888] hover:text-white hover:bg-[#181818] transition-colors"><span class="material-symbols-outlined text-xl">notifications</span></button><a class="w-9 h-9 rounded-full flex items-center justify-center" data-path="user-profile" href="#"><img src="https://lh3.googleusercontent.com/aida/AEtjO1XP_iArmtIhjhiyVjnOz_wbxgz4w6FadVtnDF9CUOwqb8rQa6DsoOGOaU8kXsmXnGyYnxYse-1lbqwJD7uLxjStj2nqij7LLHMDQC9988-Jx9PiTFK9adAhN6_WczfOvOXU_bINh1fNpY78AvDHhe4ei8Sl-s3IDvTYb8kUnOzUcP3zbyDPSs7ryp-OPGk8kymKU89uDEBpht3WtXnoWFjwYZbqCg7A4mgxXW3lO70mkhFe1jJn5rrecw" alt="Avatar" class="w-7 h-7 rounded-full object-cover border border-[#262626]"></a></div></div></header>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col relative w-full pt-16 pb-20 bg-black">
+<div class="flex flex-col w-full px-4 space-y-4 pt-2"><!-- Status & Session Control Strip --><div class="w-full bg-[#181818] rounded-lg p-3 border border-[#262626] flex items-center justify-between"><div class="flex items-center gap-2 min-w-0"><span class="w-2 h-2 rounded-full bg-[#2563eb] flex-shrink-0"></span><span class="text-xs font-medium text-white truncate">Late Night Focus Session</span><span class="text-xs text-[#888888] font-mono">/ 128 BPM</span></div><button class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#111111] hover:bg-[#181818] text-[#3b82f6] border border-[#262626] text-xs font-medium transition-colors flex-shrink-0" id="voice-toggle-btn"><span class="material-symbols-outlined text-sm">mic</span><span class="">Voice Mode</span></button></div><!-- Chat History --><div class="flex flex-col space-y-4"><div class="flex flex-col items-start max-w-[92%] space-y-1"><div class="flex items-center gap-2 pl-1"><span class="text-xs font-semibold text-[#3b82f6]">DJ Muse</span><span class="text-[11px] font-mono text-[#888888]">01:42 AM</span></div><div class="w-full bg-[#181818] rounded-lg p-3.5 border border-[#262626] text-white"><p class="text-sm leading-relaxed text-white">Hey Alex! I noticed you were vibing to synthwave during your late-night coding. I generated a bespoke 45-minute continuous set blending analog basslines with dark atmospheric textures. Want me to transition to it now?</p><div class="mt-3 bg-[#111111] border border-[#262626] rounded-md p-3 flex flex-col gap-2.5"><div class="flex items-center gap-3"><img class="w-12 h-12 rounded object-cover flex-shrink-0 border border-[#262626]" data-alt="Vintage electric piano Fender Rhodes keyboard keys" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDBYajCTbJovZNiDbudIWRzZ5xqZsSO8xo0ow8ihiGvyfjevCV3s_jM4kaXoBUiGoffEZWUQF7dsr_Am-CRElqjjbumkbHsiHvaIRlbfxmbfxwE31ECwBC6M56-1feGLqUpB2RRaSJAmKV71UyKqyedkFumMqa1eFsNsuAfOLUboTqRRnadHdg0q-SRq7i7P1yir3cnCjB-ErJ-cmd21R7QdIfFHa4jNMDCKG7zKRXSWpArAUpmI08"><div class="flex flex-col flex-1 min-w-0"><span class="text-sm font-semibold text-white truncate">Cyber Drift Vol. 1</span><span class="text-xs font-mono text-[#a1a1aa] mt-0.5">12 tracks • 42 mins continuous</span><div class="flex items-center gap-1.5 mt-1"><span class="px-1.5 py-0.5 bg-[#181818] text-[#a1a1aa] font-mono text-[10px] rounded border border-[#262626]">320kbps</span><span class="px-1.5 py-0.5 bg-[#181818] text-[#a1a1aa] font-mono text-[10px] rounded border border-[#262626]">Key Dm</span></div></div></div><button class="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-semibold text-xs transition-colors"><span class="material-symbols-outlined text-base">play_arrow</span><span class="">Play Bespoke Set</span></button></div></div></div><div class="flex flex-col items-end self-end max-w-[88%] space-y-1"><div class="flex items-center gap-2 pr-1"><span class="text-[11px] font-mono text-[#888888]">01:43 AM</span><span class="text-xs font-semibold text-[#3b82f6]">You</span></div><div class="bg-[#2563eb] text-white rounded-lg p-3 font-medium text-sm leading-relaxed">Make it a bit darker and heavier on the synth bass, something like Carpenter Brut meets Gunship.</div></div><div class="flex flex-col items-start max-w-[94%] space-y-1"><div class="flex items-center gap-2 pl-1"><span class="text-xs font-semibold text-[#3b82f6]">DJ Muse</span><span class="text-[11px] font-mono text-[#888888]">01:43 AM</span></div><div class="w-full bg-[#181818] rounded-lg p-3.5 border border-[#262626] text-white"><p class="text-sm leading-relaxed text-white">Adjusting frequency parameters. Boosted sub-bass +4dB and queued up high-octane darksynth rhythms. Here's your personalized queue:</p><div class="mt-2.5 flex items-center gap-2 bg-[#111111] border border-[#262626] px-2.5 py-1.5 rounded text-xs font-mono text-[#3b82f6]"><span class="material-symbols-outlined text-sm">tune</span><span class="">Sub-bass +4.0dB • Sidechain 1.8x</span></div><div class="mt-3 flex flex-col space-y-1.5"><div class="flex items-center justify-between p-2 rounded bg-[#111111] border border-[#262626]"><div class="flex items-center gap-2.5 min-w-0"><img class="w-9 h-9 rounded object-cover flex-shrink-0 border border-[#262626]" data-alt="Turbulence Void" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9XKxBTHTXoPNLNpvF6mNcocih5EnPBtJK7mxEQT42xx52TTfgmkEYOcpUSZT1mt8vzzXplPbe5pTpn5uC9Ax7JEFbAOTLNB_SYkrfoFD69kE69vqcBu78MdY8bNtupqh233qiGQ8FXVGyi0xjhQitmxiz_AxxuUd0IPCPw77wFPtWTMAFgOMSN9Tev-BZ8Td_6vEL-NP1xJnUj_mzSipfqNJVfAeE9X4vip9MUOAQZP3SBJU5kAg"><div class="flex flex-col min-w-0"><span class="text-xs font-semibold text-white truncate">Turbulence Void</span><span class="text-[11px] text-[#888888] truncate">Vektor Pulse • 132 BPM</span></div></div><div class="flex items-center gap-2 flex-shrink-0"><span class="text-[11px] font-mono text-[#888888]">3:48</span><button class="text-[#888888] hover:text-[#3b82f6] p-1"><span class="material-symbols-outlined text-base">favorite_border</span></button></div></div><div class="flex items-center justify-between p-2 rounded bg-[#111111] border border-[#262626]"><div class="flex items-center gap-2.5 min-w-0"><img class="w-9 h-9 rounded object-cover flex-shrink-0 border border-[#262626]" data-alt="Neon Bloodline" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBELGMdPpihnWWDVTdbRStqNi0_TBV0TAaIBUpVJj51_8YK6N31Fzd5Tff_NCEzaR2FjKdPknQ3cjp0vWihQgVVIuRGHmXj10W7LBLCkPbNxA32BWXag1kibAJk7TW0eaPX-CJUQJTBtccSn5WkxTWc_idKv2vBLijCoDyZHtD3GKqyKljfa0dXURa0GUwgXtjJtftBNkZJvg76garOJYL7ZDJPrXNldw-i71TP5Gc0JsK5JurFBZQ"><div class="flex flex-col min-w-0"><span class="text-xs font-semibold text-white truncate">Neon Bloodline</span><span class="text-[11px] text-[#888888] truncate">Kavinsky Core • 126 BPM</span></div></div><div class="flex items-center gap-2 flex-shrink-0"><span class="text-[11px] font-mono text-[#888888]">4:12</span><button class="text-[#888888] hover:text-[#3b82f6] p-1"><span class="material-symbols-outlined text-base">favorite_border</span></button></div></div><div class="flex items-center justify-between p-2 rounded bg-[#111111] border border-[#262626]"><div class="flex items-center gap-2.5 min-w-0"><img class="w-9 h-9 rounded object-cover flex-shrink-0 border border-[#262626]" data-alt="Overdrive Syndicate" src="https://lh3.googleusercontent.com/aida/AEtjO1VGzuhlkhhf0UkCMxOH8GJ03gPIFTi-Q2wveYP37bNT8dMBC-ijqLIv4S5PMdg-18DUGM8u1kNylb-LtIE0Phv9l65i-DgJg6Y968OApaKb2tPquXuSQenCP8Lei0RIW8aKKknbp43Zp7YrXbZSnTwbfhYyCvvhQAbGwLeBAZKJ7J3Za6JukeoT9D7YEEVvvAjGv0-WI4LBw5xr7Sy0sd9mBuB6_vAKwk87xoKLdKGOQoKiBYfz93SW"><div class="flex flex-col min-w-0"><span class="text-xs font-semibold text-white truncate">Overdrive Syndicate</span><span class="text-[11px] text-[#888888] truncate">Gunship Echo • 130 BPM</span></div></div><div class="flex items-center gap-2 flex-shrink-0"><span class="text-[11px] font-mono text-[#888888]">3:55</span><button class="text-[#888888] hover:text-[#3b82f6] p-1"><span class="material-symbols-outlined text-base">favorite_border</span></button></div></div></div><button class="mt-3 w-full py-2 rounded bg-[#111111] hover:bg-[#181818] text-[#3b82f6] border border-[#262626] font-medium text-xs flex items-center justify-center gap-1.5 transition-colors"><span class="material-symbols-outlined text-sm">queue_music</span><span class="">Apply to Active Mix</span></button></div></div><div class="flex items-center gap-2 pl-1 py-1"><span class="w-2 h-2 rounded-full bg-[#2563eb]"></span><span class="text-xs font-mono text-[#888888]">Analyzing audio frequency &amp; crossfade...</span></div></div><!-- Prompt Pills --><div class="w-full pt-1 pb-1"><div class="flex items-center gap-2 overflow-x-auto py-1"><button class="suggestion-chip flex-shrink-0 px-3 py-1.5 rounded-full bg-[#181818] hover:bg-[#262626] border border-[#262626] text-white text-xs transition-colors flex items-center gap-1.5"><span class="material-symbols-outlined text-xs text-[#3b82f6]">speed</span><span class="">Drop the tempo</span></button><button class="suggestion-chip flex-shrink-0 px-3 py-1.5 rounded-full bg-[#181818] hover:bg-[#262626] border border-[#262626] text-white text-xs transition-colors flex items-center gap-1.5"><span class="material-symbols-outlined text-xs text-[#3b82f6]">mic_external_on</span><span class="">Add vocal trance</span></button><button class="suggestion-chip flex-shrink-0 px-3 py-1.5 rounded-full bg-[#181818] hover:bg-[#262626] border border-[#262626] text-white text-xs transition-colors flex items-center gap-1.5"><span class="material-symbols-outlined text-xs text-[#3b82f6]">ac_unit</span><span class="">Glacial ambient</span></button><button class="suggestion-chip flex-shrink-0 px-3 py-1.5 rounded-full bg-[#181818] hover:bg-[#262626] border border-[#262626] text-white text-xs transition-colors flex items-center gap-1.5"><span class="material-symbols-outlined text-xs text-[#3b82f6]">casino</span><span class="">Surprise me</span></button></div></div><!-- Input Bar --><div class="sticky bottom-0 z-30 w-full pt-1 pb-3 bg-black"><div class="w-full bg-[#181818] border border-[#262626] rounded-lg p-1.5 flex items-center gap-2"><button class="w-8 h-8 rounded flex items-center justify-center text-[#888888] hover:text-[#3b82f6] hover:bg-[#262626] transition-colors flex-shrink-0" id="mic-input-btn" title="Voice Input"><span class="material-symbols-outlined text-lg">mic</span></button><input class="w-full bg-transparent px-2 text-sm text-white placeholder:text-[#888888] focus:outline-none min-w-0" id="chat-input" placeholder="Ask DJ Muse to mix, find tracks, or adapt vibe..." type="text"><button class="w-8 h-8 rounded bg-[#2563eb] hover:bg-[#1d4ed8] text-white flex items-center justify-center transition-colors flex-shrink-0 font-semibold" id="send-chat-btn"><span class="material-symbols-outlined text-lg">arrow_upward</span></button></div></div></div>
+</main>
+<!-- Flat Bottom Tab Bar -->
+<nav class="fixed bottom-0 w-full z-50 pb-safe bg-black border-t border-[#262626]" data-active-classes="text-[#3b82f6]"><div class="flex justify-around items-center h-14 px-4"><a class="flex flex-col items-center justify-center min-w-[56px] text-[#888888] hover:text-white transition-colors" data-path="home-feed" href="#"><span class="material-symbols-outlined text-xl">graphic_eq</span><span class="text-[10px] mt-0.5">Home</span></a><a class="flex flex-col items-center justify-center min-w-[56px] text-[#888888] hover:text-white transition-colors" data-path="discover-search" href="#"><span class="material-symbols-outlined text-xl">search</span><span class="text-[10px] mt-0.5">Search</span></a><a aria-current="page" class="flex flex-col items-center justify-center min-w-[56px] text-[#3b82f6] font-medium" data-path="dj-muse-chat" href="#"><span class="material-symbols-outlined text-xl">auto_awesome</span><span class="text-[10px] mt-0.5">DJ Muse</span></a><a class="flex flex-col items-center justify-center min-w-[56px] text-[#888888] hover:text-white transition-colors" data-path="user-profile" href="#"><span class="material-symbols-outlined text-xl">person</span><span class="text-[10px] mt-0.5">Profile</span></a></div></nav>
+<script>
+    (function() {
+      const chips = document.querySelectorAll('.suggestion-chip');
+      const input = document.getElementById('chat-input');
+      const sendBtn = document.getElementById('send-chat-btn');
+      const voiceBtn = document.getElementById('voice-toggle-btn');
+      const micBtn = document.getElementById('mic-input-btn');
+
+      chips.forEach(chip => {
+        chip.addEventListener('click', () => {
+          const text = chip.querySelector('span:last-child')?.innerText || '';
+          if (input) {
+            input.value = text;
+            input.focus();
+          }
+        });
+      });
+
+      if (sendBtn && input) {
+        sendBtn.addEventListener('click', () => {
+          if (!input.value.trim()) return;
+          input.value = '';
+        });
+      }
+
+      let isRecording = false;
+      function toggleVoiceIndicator() {
+        isRecording = !isRecording;
+        if (micBtn) {
+          if (isRecording) {
+            micBtn.classList.add('text-cyan-400', 'bg-slate-800');
+          } else {
+            micBtn.classList.remove('text-cyan-400', 'bg-slate-800');
+          }
+        }
+      }
+
+      if (voiceBtn) voiceBtn.addEventListener('click', toggleVoiceIndicator);
+      if (micBtn) micBtn.addEventListener('click', toggleVoiceIndicator);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+</body></html>

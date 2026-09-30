@@ -63,7 +63,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   play: async (track?: Track, newQueue?: Track[]) => {
     const state = get();
 
-    // 1. If a new queue is provided, update queue and current index
+    // 1. If a new queue is provided, update queue
     let activeQueue = state.queue;
     if (newQueue && newQueue.length > 0) {
       activeQueue = newQueue;
@@ -82,10 +82,9 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
     if (!targetTrack) return;
 
-    // Determine index in queue
+    // Synchronize queue index
     let newIndex = activeQueue.findIndex((t) => t.id === targetTrack!.id);
     if (newIndex === -1) {
-      // Track not in queue, add it
       activeQueue = [targetTrack, ...activeQueue];
       newIndex = 0;
       set({ queue: activeQueue, currentIndex: 0 });
@@ -93,31 +92,19 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       set({ currentIndex: newIndex });
     }
 
-    // 2. If track is already loaded in player, simply resume
-    if (
-      !track ||
-      (state.currentTrack && state.currentTrack.id === targetTrack.id && state.soundObject)
-    ) {
-      if (state.soundObject) {
+    // 2. If no track was specified (e.g. play/pause toggled) and we already have a loaded player for current track
+    if (!track && state.currentTrack && state.soundObject) {
+      try {
         state.soundObject.play();
         set({ isPlaying: true });
         return;
+      } catch (e) {
+        console.warn('[Player Store] Resume error:', e);
       }
     }
 
-    // 3. Changing to a new track
-    if (isSwitchingTrack) return;
-    isSwitchingTrack = true;
-
-    // Safely cleanup previous player instance
-    if (state.soundObject) {
-      try {
-        state.soundObject.pause();
-        state.soundObject.remove();
-      } catch (cleanupErr) {
-        console.warn('[Player Cleanup Notice]:', cleanupErr);
-      }
-    }
+    // 3. Changing track or loading audio
+    const previousPlayer = state.soundObject;
 
     set({
       isLoading: true,
@@ -125,21 +112,28 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       progress: 0,
       currentTime: 0,
       duration: targetTrack.duration || 180,
-      soundObject: null,
     });
+
+    // Cleanup previous sound object
+    if (previousPlayer) {
+      try {
+        previousPlayer.pause();
+        previousPlayer.remove();
+      } catch (cleanupErr) {
+        console.warn('[Player Cleanup Notice]:', cleanupErr);
+      }
+    }
 
     try {
       await configureAudio();
 
-      console.log(`[Anaska Music Player] Buffering: "${targetTrack.title}" by ${targetTrack.artist}`);
+      console.log(`[Anaska Player] Loading track "${targetTrack.title}" by ${targetTrack.artist}`);
       
       const player = createAudioPlayer(targetTrack.audioUrl, {
-        updateInterval: 200,
+        updateInterval: 250,
         keepAudioSessionActive: true,
-        preferredForwardBufferDuration: 20, // 20s forward buffer for lossless, stutter-free streaming
       });
 
-      // Synchronize repeat mode with native loop
       if (get().repeatMode === 'one') {
         player.loop = true;
       }
@@ -164,10 +158,10 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
               duration: trackDuration,
               progress: trackDuration > 0 ? Math.min(1, Math.max(0, pos / trackDuration)) : 0,
               isPlaying: status.playing,
+              isLoading: false,
             });
           }
 
-          // Handle automatic track transition when song reaches end
           if (status.didJustFinish && !hasFinishedTriggered) {
             hasFinishedTriggered = true;
             const currentMode = get().repeatMode;
@@ -177,7 +171,6 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
               player.play();
               hasFinishedTriggered = false;
             } else {
-              // Automatically advance queue
               setTimeout(() => {
                 get().playNext();
               }, 150);
@@ -195,10 +188,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
         duration: targetTrack.duration || 180,
       });
     } catch (err) {
-      console.error('[Anaska Music Player] Error loading audio track:', err);
+      console.error('[Anaska Player] Error loading track:', err);
       set({ isLoading: false, isPlaying: false });
-    } finally {
-      isSwitchingTrack = false;
     }
   },
 

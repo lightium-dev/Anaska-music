@@ -128,14 +128,22 @@ export class AIAssistantService {
     let playlistTitle = 'Curated Neural Flow';
     let playlistDesc = 'Bespoke frequencies compiled by DJ Muse';
 
-    if (q.includes('metal') || q.includes('industrial') || q.includes('heavy')) {
+    if (q.includes('metal') || q.includes('industrial') || q.includes('heavy') || q.includes('metallica') || q.includes('slipknot')) {
       genreFilter = ['metal'];
       playlistTitle = '⚡ Cyberpunk Heavy Metal Flow';
       playlistDesc = 'Distorted guitars, industrial basslines, and relentless energy';
-    } else if (q.includes('rock') || q.includes('grunge') || q.includes('indie')) {
+    } else if (q.includes('rock') || q.includes('grunge') || q.includes('indie') || q.includes('nirvana') || q.includes('zeppelin') || q.includes('floyd')) {
       genreFilter = ['rock'];
       playlistTitle = '🎸 Electric Overdrive Rock Set';
-      playlistDesc = 'Driving riffs, punchy acoustics, and alternative grit';
+      playlistDesc = 'Driving riffs, punchy acoustics, and legendary rock anthems';
+    } else if (q.includes('jazz') || q.includes('bebop') || q.includes('swing') || q.includes('miles davis') || q.includes('coltrane')) {
+      genreFilter = ['jazz'];
+      playlistTitle = '🎷 Midnight Velvet Jazz Club';
+      playlistDesc = 'Smooth saxophone solos, warm double bass, and iconic bebop classics';
+    } else if (q.includes('blues') || q.includes('bleu') || q.includes('soul') || q.includes('b.b. king') || q.includes('bb king') || q.includes('vaughan')) {
+      genreFilter = ['blues'];
+      playlistTitle = '🎸 Raw Delta & Electric Blues Session';
+      playlistDesc = 'Expressive guitar bends, soul-stirring organ riffs, and legendary blues grooves';
     } else if (q.includes('synthwave') || q.includes('retro') || q.includes('80s') || q.includes('neon')) {
       genreFilter = ['synthwave'];
       playlistTitle = '🏎️ Neon Cyber Horizon Mix';
@@ -203,9 +211,9 @@ export class AIAssistantService {
     }
 
     try {
-      // 1. If user asked for a specific artist/song, query live real catalog
+      // 1. If user asked for a specific artist/song, query live full-length catalog
       if (searchTarget.length > 2) {
-        const liveTracks = await musicService.searchExternalTracks(searchTarget, genreFilter[0], 6);
+        const liveTracks = await musicService.searchFullLengthTracks(searchTarget, genreFilter[0], 6);
         if (liveTracks.length > 0) {
           return {
             type: isPlayDirect ? 'play_track' : 'playlist',

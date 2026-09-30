@@ -1,0 +1,232 @@
+<!DOCTYPE html><html class="dark" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport">
+<meta content="mobile_tab" name="shell-type">
+<title>Anaska Music</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style>
+    @layer base {
+      html, body {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        background-color: #0f172a;
+        color: #f1f5f9;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      }
+      body {
+        overscroll-behavior-y: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+      .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-black text-[#f1f5f9] flex flex-col min-h-screen antialiased select-none">
+<!-- Top App Bar -->
+<header class="fixed top-0 w-full z-40 pt-safe bg-black border-b border-[#262626]"><div class="h-14 px-4 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#3b82f6] text-2xl">graphic_eq</span>
+<span class="text-lg font-bold text-white tracking-wider">ANASKA</span>
+</div>
+<div class="flex items-center gap-1">
+<button aria-label="Notifications" class="w-9 h-9 rounded flex items-center justify-center text-[#94a3b8] hover:text-white transition-colors">
+<span class="material-symbols-outlined text-xl">notifications</span>
+</button>
+<a aria-label="Profile" class="w-9 h-9 rounded flex items-center justify-center" data-path="user-profile" href="#"><div class="w-7 h-7 rounded-full bg-[#181818] border border-[#262626] overflow-hidden flex items-center justify-center"><img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1XP_iArmtIhjhiyVjnOz_wbxgz4w6FadVtnDF9CUOwqb8rQa6DsoOGOaU8kXsmXnGyYnxYse-1lbqwJD7uLxjStj2nqij7LLHMDQC9988-Jx9PiTFK9adAhN6_WczfOvOXU_bINh1fNpY78AvDHhe4ei8Sl-s3IDvTYb8kUnOzUcP3zbyDPSs7ryp-OPGk8kymKU89uDEBpht3WtXnoWFjwYZbqCg7A4mgxXW3lO70mkhFe1jJn5rrecw" alt="Music avatar icon"></div></a>
+</div>
+</div></header>
+<!-- Main Content Container -->
+<main class="flex-1 w-full pt-14 pb-36 px-4">
+<!-- Greeting & Status -->
+<section class="pt-4 pb-3 flex items-start justify-between"><div class="">
+<p class="font-mono text-xs uppercase tracking-wider text-[#3b82f6] mb-0.5">Glacial Session</p>
+<h1 class="text-xl font-bold text-white tracking-tight">Good evening, Alex</h1>
+</div>
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#181818] border border-[#262626]" id="muse-pulse-toggle">
+<span class="w-2 h-2 rounded-full bg-[#3b82f6]"></span>
+<span class="font-mono text-[11px] text-[#94a3b8] font-medium tracking-wide uppercase">DJ Muse</span>
+</div></section>
+<!-- Simple Flat Filter Pills -->
+<div class="flex items-center gap-2 overflow-x-auto py-1 -mx-4 px-4 no-scrollbar" id="genre-filter-row"><button class="filter-pill active-filter px-3.5 py-1.5 rounded text-xs font-semibold bg-[#2563eb] text-white border border-[#2563eb] transition-colors flex-shrink-0">All</button><button class="filter-pill px-3.5 py-1.5 rounded text-xs font-medium bg-[#181818] text-[#a1a1aa] hover:text-white border border-[#262626] transition-colors flex-shrink-0">Chill</button><button class="filter-pill px-3.5 py-1.5 rounded text-xs font-medium bg-[#181818] text-[#a1a1aa] hover:text-white border border-[#262626] transition-colors flex-shrink-0">Electronic</button><button class="filter-pill px-3.5 py-1.5 rounded text-xs font-medium bg-[#181818] text-[#a1a1aa] hover:text-white border border-[#262626] transition-colors flex-shrink-0">Bass</button></div>
+<!-- Clean AI-Curated Feature Card -->
+<section class="mt-4"><div class="rounded-lg bg-[#111111] border border-[#262626] p-4 flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<span class="font-mono text-[11px] uppercase tracking-wider text-[#3b82f6] font-semibold">AI Curated Focus</span>
+<span class="text-xs text-[#94a3b8] font-mono">132 BPM</span>
+</div>
+<div class="flex gap-3">
+<div class="w-20 h-20 rounded bg-black border border-[#262626] overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="Fender Rhodes electric piano keyboard" src="https://lh3.googleusercontent.com/aida/AEtjO1VL-kjUPSqO3ul3x0UTso2Jw1xjFGBZFw1xxj3OxoyuVE7SrWOonP1mauAZUCKF4S8A91vp8ct4C7d24U4U1T061JCcEX-7ekSfF7cpJOojGASq5YIYza3aTEGYeprpNJihr6fUxWizc-fcs7qMiEUDbPMT2_i4aeuBZtflsHy-lVzRyuQ8zxMNzyIpWeQbF6sxOpxsabk3ddhR7cJoYhh1u5R7gOejBiANRfW_2i01baPl5y_xlzXeQw">
+</div>
+<div class="flex-1 min-w-0 flex flex-col justify-center">
+<h2 class="text-base font-semibold text-white truncate">Neural Hyperdrive - Vol. 4</h2>
+<p class="text-xs text-[#94a3b8] truncate mt-0.5">Kavinsky • Muse AI Session</p>
+<p class="text-[11px] text-[#71717a] truncate mt-1">Glacial synthetic progression</p>
+</div>
+</div>
+<div class="flex items-center justify-between pt-2 border-t border-[#262626]">
+<button class="flex items-center gap-1.5 text-xs text-[#94a3b8] hover:text-white transition-colors">
+<span class="material-symbols-outlined text-base">mic</span>
+<span class="">Prompt Muse</span>
+</button>
+<button aria-label="Play featured release" class="h-8 px-4 rounded bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-semibold text-xs flex items-center gap-1.5 transition-colors"><span class="material-symbols-outlined text-base">play_arrow</span><span class="">Play Mix</span></button>
+</div>
+</div></section>
+<!-- Recommended Section (Horizontal Cards) -->
+<section class="mt-6"><div class="flex items-center justify-between mb-3">
+<div>
+<h3 class="text-sm font-semibold text-white">Recommended</h3>
+<p class="text-xs text-[#94a3b8]">Curated for your daily timeline</p>
+</div>
+<a class="text-xs font-mono text-[#3b82f6] hover:underline" href="#">View all</a>
+</div>
+<div class="flex gap-3 overflow-x-auto -mx-4 px-4 no-scrollbar">
+<!-- Card 1 -->
+<div class="w-32 flex-shrink-0 cursor-pointer group">
+<div class="w-32 h-32 rounded bg-[#111111] border border-[#262626] overflow-hidden mb-2">
+<img class="w-full h-full object-cover" data-alt="Chrono Drift album art" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9XKxBTHTXoPNLNpvF6mNcocih5EnPBtJK7mxEQT42xx52TTfgmkEYOcpUSZT1mt8vzzXplPbe5pTpn5uC9Ax7JEFbAOTLNB_SYkrfoFD69kE69vqcBu78MdY8bNtupqh233qiGQ8FXVGyi0xjhQitmxiz_AxxuUd0IPCPw77wFPtWTMAFgOMSN9Tev-BZ8Td_6vEL-NP1xJnUj_mzSipfqNJVfAeE9X4vip9MUOAQZP3SBJU5kAg">
+</div>
+<h4 class="text-xs font-medium text-white truncate group-hover:text-[#10b981]">Chrono Drift</h4>
+<p class="text-[11px] text-[#94a3b8] truncate">Lorn</p>
+</div>
+<!-- Card 2 -->
+<div class="w-32 flex-shrink-0 cursor-pointer group">
+<div class="w-32 h-32 rounded bg-[#111111] border border-[#262626] overflow-hidden mb-2">
+<img class="w-full h-full object-cover" data-alt="Neon Solitude album art" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBELGMdPpihnWWDVTdbRStqNi0_TBV0TAaIBUpVJj51_8YK6N31Fzd5Tff_NCEzaR2FjKdPknQ3cjp0vWihQgVVIuRGHmXj10W7LBLCkPbNxA32BWXag1kibAJk7TW0eaPX-CJUQJTBtccSn5WkxTWc_idKv2vBLijCoDyZHtD3GKqyKljfa0dXURa0GUwgXtjJtftBNkZJvg76garOJYL7ZDJPrXNldw-i71TP5Gc0JsK5JurFBZQ">
+</div>
+<h4 class="text-xs font-medium text-white truncate group-hover:text-[#10b981]">Neon Solitude</h4>
+<p class="text-[11px] text-[#94a3b8] truncate">The Midnight</p>
+</div>
+<!-- Card 3 -->
+<div class="w-32 flex-shrink-0 cursor-pointer group">
+<div class="w-32 h-32 rounded bg-[#111111] border border-[#262626] overflow-hidden mb-2">
+<img class="w-full h-full object-cover" data-alt="Resonance album art" src="https://lh3.googleusercontent.com/aida/AEtjO1VGzuhlkhhf0UkCMxOH8GJ03gPIFTi-Q2wveYP37bNT8dMBC-ijqLIv4S5PMdg-18DUGM8u1kNylb-LtIE0Phv9l65i-DgJg6Y968OApaKb2tPquXuSQenCP8Lei0RIW8aKKknbp43Zp7YrXbZSnTwbfhYyCvvhQAbGwLeBAZKJ7J3Za6JukeoT9D7YEEVvvAjGv0-WI4LBw5xr7Sy0sd9mBuB6_vAKwk87xoKLdKGOQoKiBYfz93SW">
+</div>
+<h4 class="text-xs font-medium text-white truncate group-hover:text-[#10b981]">Resonance</h4>
+<p class="text-[11px] text-[#94a3b8] truncate">HOME</p>
+</div>
+<!-- Card 4 -->
+<div class="w-32 flex-shrink-0 cursor-pointer group">
+<div class="w-32 h-32 rounded bg-[#111111] border border-[#262626] overflow-hidden mb-2">
+<img class="w-full h-full object-cover" data-alt="Hyperion album art" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDBYajCTbJovZNiDbudIWRzZ5xqZsSO8xo0ow8ihiGvyfjevCV3s_jM4kaXoBUiGoffEZWUQF7dsr_Am-CRElqjjbumkbHsiHvaIRlbfxmbfxwE31ECwBC6M56-1feGLqUpB2RRaSJAmKV71UyKqyedkFumMqa1eFsNsuAfOLUboTqRRnadHdg0q-SRq7i7P1yir3cnCjB-ErJ-cmd21R7QdIfFHa4jNMDCKG7zKRXSWpArAUpmI08">
+</div>
+<h4 class="text-xs font-medium text-white truncate group-hover:text-[#10b981]">Hyperion</h4>
+<p class="text-[11px] text-[#94a3b8] truncate">Gesaffelstein</p>
+</div>
+</div></section>
+<!-- Heavy Rotation Tracklist Rows -->
+<section class="mt-6"><div class="flex items-center justify-between mb-3">
+<h3 class="text-sm font-semibold text-white">Heavy Rotation</h3>
+<span class="text-xs font-mono text-[#94a3b8]">4 TRACKS</span>
+</div>
+<div class="flex flex-col gap-1.5">
+<!-- Row 1: Active Playing -->
+<div class="flex items-center gap-3 p-2.5 rounded bg-[#181818] border border-[#262626]"><div class="w-5 text-center flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-sm text-[#3b82f6]">equalizer</span></div><div class="w-10 h-10 rounded bg-black border border-[#262626] overflow-hidden flex-shrink-0"><img class="w-full h-full object-cover" data-alt="Cybernetica vinyl artwork" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCbI7T8PbVWIL8pvE3SVIWNBt_hlFoVWCYjc4PjKoXoJq1OTS3tfrA0GiwWu2PgxJBz03mle0C9qy23H9qCosg0cUjUtQ_vh3cDt0HWLdRla7W_RSHIvqapRO8CTBDqT7FQMRDbUMI0Ntj73DcMhiSTfEJ6HrGMkoGPW5pSsFUl1tY8YZ6dgYzbhQ5YLbsmyuAsbHduhj53T4mEUId9jF3q-P4x6AuHo12NaycvkXPT34hUiZwqfNg"></div><div class="flex-1 min-w-0"><h4 class="text-xs font-medium text-white truncate">Cybernetica Echoes</h4><p class="text-[11px] text-[#a1a1aa] truncate">Hyperion</p></div><span class="font-mono text-xs text-[#3b82f6]">3:42</span><button aria-label="Track options" class="w-7 h-7 flex items-center justify-center text-[#71717a] hover:text-white"><span class="material-symbols-outlined text-base">more_vert</span></button></div>
+<!-- Row 2 -->
+<div class="flex items-center gap-3 p-2.5 rounded bg-[#111111] hover:bg-[#181818] border border-[#262626] transition-colors cursor-pointer">
+<span class="w-5 text-center font-mono text-xs text-[#71717a] flex-shrink-0">02</span>
+<div class="w-10 h-10 rounded bg-black border border-[#262626] overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="Synthetic Solace cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAJU2ryB2DDrFMyQQ44T9HUIED3QTvBnNx2elz3_0L69IO2xqjepmDtZakW0APIp2pS24jmzpGNvVTRS8xEW3qjE0ga3ZwqRNVAon-ql3g9y9WEI7zqu5kWSfnA2Ll9ECuiHiF5hyS_35n2b2pj7ZFXsZF80QeLSLEUsDOG4pPJcgIO3uHQ7L7SuTqLnj9F0US4cgeR3l40htZ917DQIAu-Sh5of5N2VyfFLKfCNBvHkDUO9yeSCpg">
+</div>
+<div class="flex-1 min-w-0">
+<h4 class="text-xs font-medium text-white truncate">Synthetic Solace</h4>
+<p class="text-[11px] text-[#a1a1aa] truncate">Danger • Sunset 1984</p>
+</div>
+<span class="font-mono text-xs text-[#71717a]">4:18</span>
+<button aria-label="Track options" class="w-7 h-7 flex items-center justify-center text-[#71717a] hover:text-white">
+<span class="material-symbols-outlined text-base">more_vert</span>
+</button>
+</div>
+<!-- Row 3 -->
+<div class="flex items-center gap-3 p-2.5 rounded bg-[#111111] hover:bg-[#181818] border border-[#262626] transition-colors cursor-pointer">
+<span class="w-5 text-center font-mono text-xs text-[#71717a] flex-shrink-0">03</span>
+<div class="w-10 h-10 rounded bg-black border border-[#262626] overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="Ghost In The Wire cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAG2Y1lWJJASsNPPw3ClsRivRVmcVmKEePet1hS2gXthqNoAG0JAd3q0yPWbgjbPVAnnu9lqQzYcq1gEzKfW_9s2z79XYr_d9yJzGfbJlyQt09QgfJRtL6dibd5IrOmMQvQkqXD5aafWi8mDhZaIkVwJF7v-uJmPKEa2gnv7OYKb_TfXQniA87Fppsd_gTklTmm0RjhfoSjeQZk5usbW-G0gLm-fORSRdNvtqU2GBFh-BbwBRzgBYQ">
+</div>
+<div class="flex-1 min-w-0">
+<h4 class="text-xs font-medium text-white truncate">Ghost In The Wire</h4>
+<p class="text-[11px] text-[#a1a1aa] truncate">Carpenter Brut</p>
+</div>
+<span class="font-mono text-xs text-[#71717a]">2:56</span>
+<button aria-label="Track options" class="w-7 h-7 flex items-center justify-center text-[#71717a] hover:text-white">
+<span class="material-symbols-outlined text-base">more_vert</span>
+</button>
+</div>
+<!-- Row 4 -->
+<div class="flex items-center gap-3 p-2.5 rounded bg-[#111111] hover:bg-[#181818] border border-[#262626] transition-colors cursor-pointer">
+<span class="w-5 text-center font-mono text-xs text-[#71717a] flex-shrink-0">04</span>
+<div class="w-10 h-10 rounded bg-black border border-[#262626] overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="Velocity 2099 cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBRTbbTJNQWCkwCztGDJhjj5zW3VTnvh1IUwIpOQvF6Af6gdfq0UwdKGVOHuCjAhnEMgaLsVr7NZaQUSfNC3tjsPuYZ_tcfkN7fBFfFGFtxw0rfdW9z9CDQ8RKy4Cf-_qrInNFG-CgxxOwhaA_8PZ1dmb36yWztyX5PUtOqY4xCYTmET1OVAJnWRS0uOsmRh67uZDq1ZAd-V6bnN4UzQQ9MunTePo-dXDXGJ8pl5DQgKFokLWYzrVI">
+</div>
+<div class="flex-1 min-w-0">
+<h4 class="text-xs font-medium text-white truncate">Velocity 2099</h4>
+<p class="text-[11px] text-[#a1a1aa] truncate">Perturbator</p>
+</div>
+<span class="font-mono text-xs text-[#71717a]">5:04</span>
+<button aria-label="Track options" class="w-7 h-7 flex items-center justify-center text-[#71717a] hover:text-white">
+<span class="material-symbols-outlined text-base">more_vert</span>
+</button>
+</div>
+</div></section>
+</main>
+<!-- Docked Flat Mini-Player -->
+<aside class="fixed bottom-16 inset-x-0 z-40 px-3 pb-2"><div class="relative w-full rounded bg-[#111111] border border-[#262626] p-2 flex items-center justify-between gap-3 overflow-hidden"><div class="absolute top-0 inset-x-0 h-[2px] bg-[#262626]"><div class="h-full bg-[#2563eb] w-[58%]"></div></div><div class="flex items-center gap-2.5 min-w-0 flex-1"><div class="w-9 h-9 rounded bg-black border border-[#262626] overflow-hidden flex-shrink-0"><img class="w-full h-full object-cover" data-alt="Miniature album artwork" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBELGMdPpihnWWDVTdbRStqNi0_TBV0TAaIBUpVJj51_8YK6N31Fzd5Tff_NCEzaR2FjKdPknQ3cjp0vWihQgVVIuRGHmXj10W7LBLCkPbNxA32BWXag1kibAJk7TW0eaPX-CJUQJTBtccSn5WkxTWc_idKv2vBLijCoDyZHtD3GKqyKljfa0dXURa0GUwgXtjJtftBNkZJvg76garOJYL7ZDJPrXNldw-i71TP5Gc0JsK5JurFBZQ"></div><div class="flex flex-col min-w-0"><span class="text-xs font-semibold text-white truncate">Cybernetica Echoes</span><span class="text-[11px] text-[#a1a1aa] truncate">Hyperion</span></div></div><div class="flex items-center gap-1 flex-shrink-0"><button aria-label="Favorite" class="w-8 h-8 rounded flex items-center justify-center text-[#a1a1aa] hover:text-white transition-colors"><span class="material-symbols-outlined text-lg">favorite</span></button><button aria-label="Pause" class="w-8 h-8 rounded bg-[#2563eb] hover:bg-[#1d4ed8] text-white flex items-center justify-center transition-colors" id="mini-player-toggle"><span class="material-symbols-outlined text-lg">pause</span></button><button aria-label="Next track" class="w-8 h-8 rounded flex items-center justify-center text-[#a1a1aa] hover:text-white transition-colors"><span class="material-symbols-outlined text-lg">skip_next</span></button></div></div></aside>
+<!-- Bottom Tab Navigation Bar -->
+<nav class="fixed bottom-0 w-full z-50 pb-safe bg-black border-t border-[#262626]"><div class="flex justify-around items-center h-16 px-2">
+<a aria-current="page" class="flex flex-col items-center justify-center flex-1 py-1 text-[#3b82f6]" data-path="home-feed" href="#"><span class="material-symbols-outlined text-xl">home</span><span class="font-mono text-[10px] mt-0.5 font-semibold">Home</span></a>
+<a class="flex flex-col items-center justify-center flex-1 py-1 text-[#71717a] hover:text-[#10b981] transition-colors" data-path="discover-search" href="#">
+<span class="material-symbols-outlined text-xl">search</span>
+<span class="font-mono text-[10px] mt-0.5">Search</span>
+</a>
+<a class="flex flex-col items-center justify-center flex-1 py-1 text-[#71717a] hover:text-[#10b981] transition-colors" data-path="dj-muse-chat" href="#">
+<span class="material-symbols-outlined text-xl">auto_awesome</span>
+<span class="font-mono text-[10px] mt-0.5">DJ Muse</span>
+</a>
+<a class="flex flex-col items-center justify-center flex-1 py-1 text-[#71717a] hover:text-[#10b981] transition-colors" data-path="user-profile" href="#">
+<span class="material-symbols-outlined text-xl">person</span>
+<span class="font-mono text-[10px] mt-0.5">Profile</span>
+</a>
+</div></nav>
+<script>
+    (function() {
+      // Simple Flat Filter Pill Switching
+      const filterButtons = document.querySelectorAll('#genre-filter-row .filter-pill');
+      filterButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          filterButtons.forEach(btn => {
+            btn.classList.remove('bg-[#38bdf8]', 'text-[#0f172a]', 'font-semibold', 'border-[#38bdf8]');
+            btn.classList.add('bg-[#1e293b]', 'text-[#94a3b8]', 'font-medium', 'border-[#334155]');
+          });
+          button.classList.remove('bg-[#1e293b]', 'text-[#94a3b8]', 'font-medium', 'border-[#334155]');
+          button.classList.add('bg-[#38bdf8]', 'text-[#0f172a]', 'font-semibold', 'border-[#38bdf8]');
+        });
+      });
+
+      // Mini-Player Play/Pause Toggle
+      const miniToggle = document.getElementById('mini-player-toggle');
+      if (miniToggle) {
+        let isPlaying = true;
+        miniToggle.addEventListener('click', (e) => {
+          e.stopPropagation();
+          isPlaying = !isPlaying;
+          const icon = miniToggle.querySelector('.material-symbols-outlined');
+          icon.textContent = isPlaying ? 'pause' : 'play_arrow';
+        });
+      }
+    })();
+  </script>
+
+
+
+
+
+
+</body></html>
