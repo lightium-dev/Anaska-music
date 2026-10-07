@@ -1,18 +1,16 @@
 import express, { Request, Response } from 'express';
-import cors from 'cors';
 import swaggerUi from 'swagger-ui-express';
 import { config } from './config/env';
 import { checkDbConnection } from './db';
 import { errorHandler } from './middlewares/errorHandler';
-import authRoutes from './routes/authRoutes';
-import musicRoutes from './routes/musicRoutes';
-import chatRoutes from './routes/chatRoutes';
+import authRoutes from './modules/auth/auth.routes';
+import musicRoutes from './modules/music/music.routes';
+import chatRoutes from './modules/chat/chat.routes';
 import swaggerSpec from './docs/swagger.json';
 
 const app = express();
 
 // Middlewares
-app.use(cors({ origin: config.corsOrigin }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

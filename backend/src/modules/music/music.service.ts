@@ -1,4 +1,5 @@
-import { pool } from '../db';
+import { col, fn, Op, where } from 'sequelize';
+import { getModels } from '../../db';
 
 export interface GenreRecord {
   id: string;
@@ -34,16 +35,19 @@ const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
 
 export class MusicService {
   async getGenres(): Promise<GenreRecord[]> {
-    const res = await pool.query<GenreRecord>(
-      'SELECT id, name FROM genres ORDER BY name ASC'
-    );
-    return res.rows;
+    const { Genre } = await getModels();
+    const genres = await Genre.findAll({ attributes: ['id', 'name'], order: [['name', 'ASC']] });
+    return genres.map((genre) => genre.get({ plain: true }));
   }
 
   /**
    * Search full-length tracks (3 to 6+ minutes) from Audius protocol
    */
-  async searchFullLengthTracks(query: string, genreId?: string, limit: number = 20): Promise<TrackRecord[]> {
+  async searchFullLengthTracks(
+    query: string,
+    genreId?: string,
+    limit: number = 20
+  ): Promise<TrackRecord[]> {
     const cacheKey = `full_${query.toLowerCase().trim()}_${genreId || 'all'}`;
     const cached = musicCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
@@ -103,7 +107,11 @@ export class MusicService {
           const json: any = await trendingRes.json();
           if (Array.isArray(json.data)) {
             for (const t of json.data) {
-              if (t.duration && t.duration >= 120 && !tracks.some((ex) => ex.id === `audius-${t.id}`)) {
+              if (
+                t.duration &&
+                t.duration >= 120 &&
+                !tracks.some((ex) => ex.id === `audius-${t.id}`)
+              ) {
                 tracks.push({
                   id: `audius-${t.id}`,
                   title: t.title,
@@ -121,7 +129,9 @@ export class MusicService {
             }
           }
         }
-      } catch (e) {}
+      } catch (error) {
+        console.warn('[MusicService] Audius trending search error:', (error as Error).message);
+      }
     }
 
     musicCache.set(cacheKey, { data: tracks, timestamp: Date.now() });
@@ -130,14 +140,81 @@ export class MusicService {
 
   private detectGenre(title?: string, artist?: string): string {
     const text = `${title || ''} ${artist || ''}`.toLowerCase();
-    if (text.includes('metal') || text.includes('metallica') || text.includes('slipknot') || text.includes('iron maiden') || text.includes('black sabbath') || text.includes('megadeth') || text.includes('industrial') || text.includes('judas priest')) return 'metal';
-    if (text.includes('rock') || text.includes('nirvana') || text.includes('led zeppelin') || text.includes('pink floyd') || text.includes('queen') || text.includes('ac/dc') || text.includes('guns n') || text.includes('hendrix') || text.includes('indie')) return 'rock';
-    if (text.includes('jazz') || text.includes('miles davis') || text.includes('coltrane') || text.includes('brubeck') || text.includes('hancock') || text.includes('chet baker') || text.includes('bebop') || text.includes('swing')) return 'jazz';
-    if (text.includes('blues') || text.includes('bleu') || text.includes('b.b. king') || text.includes('bb king') || text.includes('stevie ray') || text.includes('muddy waters') || text.includes('gary moore') || text.includes('clapton')) return 'blues';
-    if (text.includes('synth') || text.includes('kavinsky') || text.includes('weeknd') || text.includes('midnight') || text.includes('retro')) return 'synthwave';
-    if (text.includes('lofi') || text.includes('lo-fi') || text.includes('chill') || text.includes('study')) return 'lofi';
-    if (text.includes('ambient') || text.includes('sleep') || text.includes('drone') || text.includes('meditation')) return 'ambient';
-    if (text.includes('rap') || text.includes('hip hop') || text.includes('trap') || text.includes('r&b') || text.includes('kendrick')) return 'hiphop';
+    if (
+      text.includes('metal') ||
+      text.includes('metallica') ||
+      text.includes('slipknot') ||
+      text.includes('iron maiden') ||
+      text.includes('black sabbath') ||
+      text.includes('megadeth') ||
+      text.includes('industrial') ||
+      text.includes('judas priest')
+    )
+      return 'metal';
+    if (
+      text.includes('rock') ||
+      text.includes('nirvana') ||
+      text.includes('led zeppelin') ||
+      text.includes('pink floyd') ||
+      text.includes('queen') ||
+      text.includes('ac/dc') ||
+      text.includes('guns n') ||
+      text.includes('hendrix') ||
+      text.includes('indie')
+    )
+      return 'rock';
+    if (
+      text.includes('jazz') ||
+      text.includes('miles davis') ||
+      text.includes('coltrane') ||
+      text.includes('brubeck') ||
+      text.includes('hancock') ||
+      text.includes('chet baker') ||
+      text.includes('bebop') ||
+      text.includes('swing')
+    )
+      return 'jazz';
+    if (
+      text.includes('blues') ||
+      text.includes('bleu') ||
+      text.includes('b.b. king') ||
+      text.includes('bb king') ||
+      text.includes('stevie ray') ||
+      text.includes('muddy waters') ||
+      text.includes('gary moore') ||
+      text.includes('clapton')
+    )
+      return 'blues';
+    if (
+      text.includes('synth') ||
+      text.includes('kavinsky') ||
+      text.includes('weeknd') ||
+      text.includes('midnight') ||
+      text.includes('retro')
+    )
+      return 'synthwave';
+    if (
+      text.includes('lofi') ||
+      text.includes('lo-fi') ||
+      text.includes('chill') ||
+      text.includes('study')
+    )
+      return 'lofi';
+    if (
+      text.includes('ambient') ||
+      text.includes('sleep') ||
+      text.includes('drone') ||
+      text.includes('meditation')
+    )
+      return 'ambient';
+    if (
+      text.includes('rap') ||
+      text.includes('hip hop') ||
+      text.includes('trap') ||
+      text.includes('r&b') ||
+      text.includes('kendrick')
+    )
+      return 'hiphop';
     return 'electronic';
   }
 
@@ -147,53 +224,38 @@ export class MusicService {
     limit?: number;
     offset?: number;
   }): Promise<{ tracks: TrackRecord[]; total: number }> {
-    const conditions: string[] = [];
-    const values: any[] = [];
-    let idx = 1;
-
-    if (filter?.genreId) {
-      conditions.push(`t.genre_id = $${idx++}`);
-      values.push(filter.genreId);
-    }
-
-    if (filter?.search) {
-      conditions.push(
-        `(LOWER(t.title) LIKE $${idx} OR LOWER(t.artist) LIKE $${idx} OR LOWER(g.name) LIKE $${idx})`
-      );
-      values.push(`%${filter.search.toLowerCase()}%`);
-      idx++;
-    }
-
-    const whereClause =
-      conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-
     const limit = filter?.limit || 50;
     const offset = filter?.offset || 0;
-    values.push(limit);
-    values.push(offset);
-
-    const queryStr = `
-      SELECT t.id, t.title, t.artist, t.genre_id, t.audio_url, t.cover_url, t.duration, t.created_at
-      FROM tracks t
-      LEFT JOIN genres g ON t.genre_id = g.id
-      ${whereClause}
-      ORDER BY t.created_at DESC
-      LIMIT $${idx++} OFFSET $${idx++}
-    `;
-
-    let tracks: TrackRecord[] = [];
-    try {
-      const res = await pool.query<TrackRecord>(queryStr, values);
-      tracks = res.rows;
-    } catch (e) {
-      console.warn('[MusicService] DB Query error:', e);
+    const { Genre, Track } = await getModels();
+    const filters = [];
+    if (filter?.genreId) filters.push({ genre_id: filter.genreId });
+    if (filter?.search) {
+      const searchTerm = `%${filter.search.toLowerCase()}%`;
+      filters.push({
+        [Op.or]: [
+          where(fn('LOWER', col('Track.title')), { [Op.like]: searchTerm }),
+          where(fn('LOWER', col('Track.artist')), { [Op.like]: searchTerm }),
+          where(fn('LOWER', col('genre.name')), { [Op.like]: searchTerm }),
+        ],
+      });
     }
+    const result = await Track.findAndCountAll({
+      where: filters.length ? { [Op.and]: filters } : undefined,
+      include: [{ model: Genre, as: 'genre', attributes: [], required: false }],
+      order: [['created_at', 'DESC']],
+      limit,
+      offset,
+      distinct: true,
+    });
+    let tracks = result.rows.map((track) => track.get({ plain: true }) as TrackRecord);
 
     // Search live full-length catalog
     if (filter?.search && filter.search.trim().length > 1) {
       const fullLengthTracks = await this.searchFullLengthTracks(filter.search, filter.genreId, 25);
-      
-      const existingKeys = new Set(tracks.map((t) => `${t.title.toLowerCase()}::${t.artist.toLowerCase()}`));
+
+      const existingKeys = new Set(
+        tracks.map((t) => `${t.title.toLowerCase()}::${t.artist.toLowerCase()}`)
+      );
       const newUnique = fullLengthTracks.filter(
         (t) => !existingKeys.has(`${t.title.toLowerCase()}::${t.artist.toLowerCase()}`)
       );
@@ -201,8 +263,10 @@ export class MusicService {
     } else if (filter?.genreId && tracks.length < 10) {
       const genreQuery = genreToAudiusTag[filter.genreId] || filter.genreId;
       const fullLengthGenre = await this.searchFullLengthTracks(genreQuery, filter.genreId, 15);
-      
-      const existingKeys = new Set(tracks.map((t) => `${t.title.toLowerCase()}::${t.artist.toLowerCase()}`));
+
+      const existingKeys = new Set(
+        tracks.map((t) => `${t.title.toLowerCase()}::${t.artist.toLowerCase()}`)
+      );
       const newUnique = fullLengthGenre.filter(
         (t) => !existingKeys.has(`${t.title.toLowerCase()}::${t.artist.toLowerCase()}`)
       );
@@ -216,9 +280,12 @@ export class MusicService {
     if (id.startsWith('audius-')) {
       const audiusId = id.replace('audius-', '');
       try {
-        const res = await fetch(`https://discoveryprovider.audius.co/v1/tracks/${audiusId}?app_name=ANASKA`, {
-          signal: AbortSignal.timeout(4000),
-        });
+        const res = await fetch(
+          `https://discoveryprovider.audius.co/v1/tracks/${audiusId}?app_name=ANASKA`,
+          {
+            signal: AbortSignal.timeout(4000),
+          }
+        );
         if (res.ok) {
           const json: any = await res.json();
           const t = json.data;
@@ -243,11 +310,9 @@ export class MusicService {
       }
     }
 
-    const res = await pool.query<TrackRecord>(
-      'SELECT id, title, artist, genre_id, audio_url, cover_url, duration, created_at FROM tracks WHERE id = $1',
-      [id]
-    );
-    return res.rows[0] || null;
+    const { Track } = await getModels();
+    const track = await Track.findByPk(id);
+    return track ? (track.get({ plain: true }) as TrackRecord) : null;
   }
 
   async streamTrack(id: string): Promise<{ audioUrl: string; track: TrackRecord }> {

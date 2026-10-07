@@ -1,4 +1,4 @@
-import { newDb, IMemoryDb } from 'pg-mem';
+import { DataType, newDb, IMemoryDb } from 'pg-mem';
 import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 
@@ -32,6 +32,12 @@ export async function getOrCreateMemoryDb(): Promise<{ db: IMemoryDb; pool: any 
   db.public.registerFunction({
     name: 'gen_random_uuid',
     implementation: () => crypto.randomUUID(),
+  });
+  db.public.registerFunction({
+    name: 'random',
+    returns: DataType.float,
+    impure: true,
+    implementation: () => Math.random(),
   });
 
   // Schema creation
@@ -114,8 +120,10 @@ export async function getOrCreateMemoryDb(): Promise<{ db: IMemoryDb; pool: any 
       title: 'So What (Full Jazz Masterpiece)',
       artist: 'Miles Davis',
       genre_id: 'jazz',
-      audio_url: 'https://archive.org/download/20160323presentazionesowhat.vitadimilesdavis/20160323%20presentazione%20-%20So%20What.%20Vita%20di%20Miles%20Davis.mp3',
-      cover_url: 'https://images.unsplash.com/photo-1511192336575-5a79af67a629?w=600&auto=format&fit=crop&q=80',
+      audio_url:
+        'https://archive.org/download/20160323presentazionesowhat.vitadimilesdavis/20160323%20presentazione%20-%20So%20What.%20Vita%20di%20Miles%20Davis.mp3',
+      cover_url:
+        'https://images.unsplash.com/photo-1511192336575-5a79af67a629?w=600&auto=format&fit=crop&q=80',
       duration: 562,
     },
     {
@@ -123,8 +131,10 @@ export async function getOrCreateMemoryDb(): Promise<{ db: IMemoryDb; pool: any 
       title: 'Take Five (Full Quintet Edit)',
       artist: 'Dave Brubeck',
       genre_id: 'jazz',
-      audio_url: 'https://archive.org/download/thedavebrubeckquartettakefive/The_Dave_Brubeck_Quartet-Take_Five.mp3',
-      cover_url: 'https://images.unsplash.com/photo-1415201364774-f6f0bb35f28f?w=600&auto=format&fit=crop&q=80',
+      audio_url:
+        'https://archive.org/download/thedavebrubeckquartettakefive/The_Dave_Brubeck_Quartet-Take_Five.mp3',
+      cover_url:
+        'https://images.unsplash.com/photo-1415201364774-f6f0bb35f28f?w=600&auto=format&fit=crop&q=80',
       duration: 324,
     },
     {
@@ -132,8 +142,10 @@ export async function getOrCreateMemoryDb(): Promise<{ db: IMemoryDb; pool: any 
       title: 'Blue Train',
       artist: 'John Coltrane',
       genre_id: 'jazz',
-      audio_url: 'https://archive.org/download/01.-john-coltrane-blue-train/John%20Coltrane%20-%20Blue%20Train%20(Tone%20Poet)%20(1957%20Jazz)%20PBTHAL%20%5BFlac%2024-96%20LP%5D%2F01.%20John%20Coltrane%20-%20Blue%20Train.mp3',
-      cover_url: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&auto=format&fit=crop&q=80',
+      audio_url:
+        'https://archive.org/download/01.-john-coltrane-blue-train/John%20Coltrane%20-%20Blue%20Train%20(Tone%20Poet)%20(1957%20Jazz)%20PBTHAL%20%5BFlac%2024-96%20LP%5D%2F01.%20John%20Coltrane%20-%20Blue%20Train.mp3',
+      cover_url:
+        'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&auto=format&fit=crop&q=80',
       duration: 643,
     },
     {
@@ -142,7 +154,8 @@ export async function getOrCreateMemoryDb(): Promise<{ db: IMemoryDb; pool: any 
       artist: 'Herbie Hancock',
       genre_id: 'jazz',
       audio_url: 'https://archive.org/download/80yearsofbluenote/2019-02.02.mp3',
-      cover_url: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=600&auto=format&fit=crop&q=80',
+      cover_url:
+        'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=600&auto=format&fit=crop&q=80',
       duration: 339,
     },
 
@@ -152,8 +165,10 @@ export async function getOrCreateMemoryDb(): Promise<{ db: IMemoryDb; pool: any 
       title: 'The Thrill Is Gone (Full Electric Blues)',
       artist: 'B.B. King',
       genre_id: 'blues',
-      audio_url: 'https://archive.org/download/y-2mate.com-bb-king-the-thrill-is-gone-crossroads-2010-official-live-video/y2mate.com%20-%20%20Arnold%20Mitchem%20%20Grace%20%20Preacher%20Man%20Relaxing%20Blues%20Music%202021.mp3',
-      cover_url: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80',
+      audio_url:
+        'https://archive.org/download/y-2mate.com-bb-king-the-thrill-is-gone-crossroads-2010-official-live-video/y2mate.com%20-%20%20Arnold%20Mitchem%20%20Grace%20%20Preacher%20Man%20Relaxing%20Blues%20Music%202021.mp3',
+      cover_url:
+        'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80',
       duration: 324,
     },
     {
@@ -162,7 +177,8 @@ export async function getOrCreateMemoryDb(): Promise<{ db: IMemoryDb; pool: any 
       artist: 'Stevie Ray Vaughan',
       genre_id: 'blues',
       audio_url: 'https://archive.org/download/thehearingsrv/thehearingsrv.mp3',
-      cover_url: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&auto=format&fit=crop&q=80',
+      cover_url:
+        'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&auto=format&fit=crop&q=80',
       duration: 321,
     },
     {
@@ -170,8 +186,10 @@ export async function getOrCreateMemoryDb(): Promise<{ db: IMemoryDb; pool: any 
       title: 'Still Got The Blues',
       artist: 'Gary Moore',
       genre_id: 'blues',
-      audio_url: 'https://archive.org/download/gary-moore-still-got-the-blues_202406/Gary_Moore-Still-Got-The-Blues.mp3',
-      cover_url: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=600&auto=format&fit=crop&q=80',
+      audio_url:
+        'https://archive.org/download/gary-moore-still-got-the-blues_202406/Gary_Moore-Still-Got-The-Blues.mp3',
+      cover_url:
+        'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=600&auto=format&fit=crop&q=80',
       duration: 370,
     },
 
@@ -181,8 +199,10 @@ export async function getOrCreateMemoryDb(): Promise<{ db: IMemoryDb; pool: any 
       title: 'Smells Like Teen Spirit (Full Rock Anthem)',
       artist: 'Nirvana',
       genre_id: 'rock',
-      audio_url: 'https://archive.org/download/nirvanasmellsliketeenspirit_202002/Nirvana%20-%20Smells%20Like%20Teen%20Spirit.mp3',
-      cover_url: 'https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?w=600&auto=format&fit=crop&q=80',
+      audio_url:
+        'https://archive.org/download/nirvanasmellsliketeenspirit_202002/Nirvana%20-%20Smells%20Like%20Teen%20Spirit.mp3',
+      cover_url:
+        'https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?w=600&auto=format&fit=crop&q=80',
       duration: 301,
     },
     {
@@ -190,8 +210,10 @@ export async function getOrCreateMemoryDb(): Promise<{ db: IMemoryDb; pool: any 
       title: 'Stairway to Heaven (Full Epic Suite)',
       artist: 'Led Zeppelin',
       genre_id: 'rock',
-      audio_url: 'https://archive.org/download/LedZeppelinStairwayToHeaven_20181106/Led%20Zeppelin%20-%20Stairway%20to%20Heaven.mp3',
-      cover_url: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=600&auto=format&fit=crop&q=80',
+      audio_url:
+        'https://archive.org/download/LedZeppelinStairwayToHeaven_20181106/Led%20Zeppelin%20-%20Stairway%20to%20Heaven.mp3',
+      cover_url:
+        'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=600&auto=format&fit=crop&q=80',
       duration: 482,
     },
     {
@@ -199,8 +221,10 @@ export async function getOrCreateMemoryDb(): Promise<{ db: IMemoryDb; pool: any 
       title: 'Comfortably Numb',
       artist: 'Pink Floyd',
       genre_id: 'rock',
-      audio_url: 'https://archive.org/download/pink-floyd-comfortably-numb-but-the-solo-never-ends/Pink%20Floyd%20-%20Comfortably%20Numb%20but%20the%20solo%20never%20ends.mp3',
-      cover_url: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=600&auto=format&fit=crop&q=80',
+      audio_url:
+        'https://archive.org/download/pink-floyd-comfortably-numb-but-the-solo-never-ends/Pink%20Floyd%20-%20Comfortably%20Numb%20but%20the%20solo%20never%20ends.mp3',
+      cover_url:
+        'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=600&auto=format&fit=crop&q=80',
       duration: 382,
     },
     {
@@ -208,8 +232,10 @@ export async function getOrCreateMemoryDb(): Promise<{ db: IMemoryDb; pool: any 
       title: 'Back in Black',
       artist: 'AC/DC',
       genre_id: 'rock',
-      audio_url: 'https://archive.org/download/Acdc-BackInBlack-GivenTheDogABone/Acdc-BackInBlack-GivenTheDogABone.mp3',
-      cover_url: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80',
+      audio_url:
+        'https://archive.org/download/Acdc-BackInBlack-GivenTheDogABone/Acdc-BackInBlack-GivenTheDogABone.mp3',
+      cover_url:
+        'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80',
       duration: 255,
     },
 
@@ -219,8 +245,10 @@ export async function getOrCreateMemoryDb(): Promise<{ db: IMemoryDb; pool: any 
       title: 'Master of Puppets (Full Continuous Thrash)',
       artist: 'Metallica',
       genre_id: 'metal',
-      audio_url: 'https://archive.org/download/Metallica-Master-of-Puppets-Original-1986-Studio-Recording/01%20-%20Battery.mp3',
-      cover_url: 'https://images.unsplash.com/photo-1574169208507-84376144848b?w=600&auto=format&fit=crop&q=80',
+      audio_url:
+        'https://archive.org/download/Metallica-Master-of-Puppets-Original-1986-Studio-Recording/01%20-%20Battery.mp3',
+      cover_url:
+        'https://images.unsplash.com/photo-1574169208507-84376144848b?w=600&auto=format&fit=crop&q=80',
       duration: 515,
     },
     {
@@ -228,8 +256,10 @@ export async function getOrCreateMemoryDb(): Promise<{ db: IMemoryDb; pool: any 
       title: 'The Trooper (Full Heavy Metal Anthem)',
       artist: 'Iron Maiden',
       genre_id: 'metal',
-      audio_url: 'https://archive.org/download/iron-maiden-the-trooper-official-video-other-instruments/Iron%20Maiden%20The%20Trooper%20Official%20Video-Bass.mp3',
-      cover_url: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80',
+      audio_url:
+        'https://archive.org/download/iron-maiden-the-trooper-official-video-other-instruments/Iron%20Maiden%20The%20Trooper%20Official%20Video-Bass.mp3',
+      cover_url:
+        'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80',
       duration: 253,
     },
     {
@@ -237,8 +267,10 @@ export async function getOrCreateMemoryDb(): Promise<{ db: IMemoryDb; pool: any 
       title: 'Duality',
       artist: 'Slipknot',
       genre_id: 'metal',
-      audio_url: 'https://archive.org/download/slipknotdualitykillthenoiseremix/Slipknot%20-%20Duality%20(Kill%20The%20Noise%20Remix).mp3',
-      cover_url: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=600&auto=format&fit=crop&q=80',
+      audio_url:
+        'https://archive.org/download/slipknotdualitykillthenoiseremix/Slipknot%20-%20Duality%20(Kill%20The%20Noise%20Remix).mp3',
+      cover_url:
+        'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=600&auto=format&fit=crop&q=80',
       duration: 252,
     },
 
@@ -248,8 +280,10 @@ export async function getOrCreateMemoryDb(): Promise<{ db: IMemoryDb; pool: any 
       title: 'Blinding Lights (Full Continuous Flow)',
       artist: 'The Weeknd',
       genre_id: 'synthwave',
-      audio_url: 'https://archive.org/download/THEWEEKNDBLINDINGLIGHTSVIDEO/THEWEEKNDBLINDINGLIGHTSVIDEO.mp3',
-      cover_url: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=600&auto=format&fit=crop&q=80',
+      audio_url:
+        'https://archive.org/download/THEWEEKNDBLINDINGLIGHTSVIDEO/THEWEEKNDBLINDINGLIGHTSVIDEO.mp3',
+      cover_url:
+        'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=600&auto=format&fit=crop&q=80',
       duration: 278,
     },
     {
@@ -257,8 +291,10 @@ export async function getOrCreateMemoryDb(): Promise<{ db: IMemoryDb; pool: any 
       title: 'Nightcall (Full Retro Set)',
       artist: 'Kavinsky',
       genre_id: 'synthwave',
-      audio_url: 'https://archive.org/download/kavinsky-nightcall-drive-original-movie-soundtrack/Kavinsky%20-%20Nightcall%20(Drive%20Original%20Movie%20Soundtrack).mp3',
-      cover_url: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&auto=format&fit=crop&q=80',
+      audio_url:
+        'https://archive.org/download/kavinsky-nightcall-drive-original-movie-soundtrack/Kavinsky%20-%20Nightcall%20(Drive%20Original%20Movie%20Soundtrack).mp3',
+      cover_url:
+        'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&auto=format&fit=crop&q=80',
       duration: 332,
     },
 
@@ -269,7 +305,8 @@ export async function getOrCreateMemoryDb(): Promise<{ db: IMemoryDb; pool: any 
       artist: 'Daft Punk',
       genre_id: 'electronic',
       audio_url: 'https://archive.org/download/20210320_20210320_1445/Get%20Lucky.mp3',
-      cover_url: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=600&auto=format&fit=crop&q=80',
+      cover_url:
+        'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=600&auto=format&fit=crop&q=80',
       duration: 382,
     },
     {
@@ -277,8 +314,10 @@ export async function getOrCreateMemoryDb(): Promise<{ db: IMemoryDb; pool: any 
       title: 'Rainy Cafe Study (Full Session)',
       artist: 'Coffee & Rain',
       genre_id: 'lofi',
-      audio_url: 'https://archive.org/download/RainyCafeStudySession/Rainy%20Cafe%20Study%20Session.mp3',
-      cover_url: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=600&auto=format&fit=crop&q=80',
+      audio_url:
+        'https://archive.org/download/RainyCafeStudySession/Rainy%20Cafe%20Study%20Session.mp3',
+      cover_url:
+        'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=600&auto=format&fit=crop&q=80',
       duration: 341,
     },
   ];

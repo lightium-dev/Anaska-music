@@ -1,20 +1,18 @@
 import { Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { aiAssistantService } from '../services/AIAssistantService';
-import { AuthenticatedRequest } from '../middlewares/authMiddleware';
+import { aiAssistantService } from './chat.service';
+import { AuthenticatedRequest } from '../../middlewares/authMiddleware';
 
 const chatMessageSchema = z.object({
   message: z.string().min(1).max(2000),
   sessionId: z.string().optional().nullable(),
 });
 
-export const streamChat = async (
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction
-) => {
+const guestUserId = '00000000-0000-4000-8000-000000000001';
+
+export const streamChat = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const userId = req.user?.id || 'demo-user-id';
+    const userId = req.user?.id || guestUserId;
 
     const { message, sessionId: providedSessionId } = chatMessageSchema.parse(req.body);
 
@@ -38,13 +36,9 @@ export const streamChat = async (
   }
 };
 
-export const getHistory = async (
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction
-) => {
+export const getHistory = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const userId = req.user?.id || 'demo-user-id';
+    const userId = req.user?.id || guestUserId;
 
     const session = await aiAssistantService.getOrCreateSession(userId);
     const messages = await aiAssistantService.getSessionMessages(session.id);

@@ -1,15 +1,13 @@
-import { MusicService } from '../../src/services/MusicService';
-import { pool } from '../../src/db';
+import { MusicService } from '../../src/modules/music/music.service';
+import { getModels } from '../../src/db';
 
 jest.mock('../../src/db', () => ({
-  pool: {
-    query: jest.fn(),
-  },
+  getModels: jest.fn(),
 }));
 
 describe('MusicService Unit Tests', () => {
   const musicService = new MusicService();
-  const mockPoolQuery = pool.query as jest.Mock;
+  const mockGetModels = getModels as jest.Mock;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -20,13 +18,19 @@ describe('MusicService Unit Tests', () => {
       { id: 'synthwave', name: 'Synthwave & Retrowave' },
       { id: 'lofi', name: 'Lo-Fi Chill & Beats' },
     ];
-    mockPoolQuery.mockResolvedValueOnce({ rows: mockGenres });
+    const findAll = jest.fn().mockResolvedValue(
+      mockGenres.map((genre) => ({
+        get: () => genre,
+      }))
+    );
+    mockGetModels.mockResolvedValueOnce({ Genre: { findAll } });
 
     const genres = await musicService.getGenres();
     expect(genres).toEqual(mockGenres);
-    expect(mockPoolQuery).toHaveBeenCalledWith(
-      'SELECT id, name FROM genres ORDER BY name ASC'
-    );
+    expect(findAll).toHaveBeenCalledWith({
+      attributes: ['id', 'name'],
+      order: [['name', 'ASC']],
+    });
   });
 
   test('getTrackById returns track or null', async () => {
@@ -40,9 +44,11 @@ describe('MusicService Unit Tests', () => {
       duration: 195,
       created_at: new Date(),
     };
-    mockPoolQuery.mockResolvedValueOnce({ rows: [mockTrack] });
+    const findByPk = jest.fn().mockResolvedValue({ get: () => mockTrack });
+    mockGetModels.mockResolvedValueOnce({ Track: { findByPk } });
 
     const track = await musicService.getTrackById('track-1');
     expect(track).toEqual(mockTrack);
+    expect(findByPk).toHaveBeenCalledWith('track-1');
   });
 });

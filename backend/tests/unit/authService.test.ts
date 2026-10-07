@@ -1,4 +1,4 @@
-import { AuthService } from '../../src/services/AuthService';
+import { AuthService } from '../../src/modules/auth/auth.service';
 
 describe('AuthService Unit Tests', () => {
   const authService = new AuthService();

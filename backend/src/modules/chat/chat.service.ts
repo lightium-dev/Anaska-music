@@ -1,7 +1,7 @@
-import crypto from 'crypto';
 import { Response } from 'express';
-import { pool } from '../db';
-import { musicService } from './MusicService';
+import { col, fn, literal, Op, where } from 'sequelize';
+import { getModels } from '../../db';
+import { musicService } from '../music/music.service';
 
 export interface ChatSessionRecord {
   id: string;
@@ -35,29 +35,24 @@ export interface PlaylistAction {
 
 export class AIAssistantService {
   async getOrCreateSession(userId: string): Promise<ChatSessionRecord> {
-    const existing = await pool.query<ChatSessionRecord>(
-      'SELECT id, user_id, started_at FROM chat_sessions WHERE user_id = $1 ORDER BY started_at DESC LIMIT 1',
-      [userId]
-    );
+    const { ChatSession } = await getModels();
+    const existing = await ChatSession.findOne({
+      where: { user_id: userId },
+      order: [['started_at', 'DESC']],
+    });
+    if (existing) return existing.get({ plain: true }) as ChatSessionRecord;
 
-    if (existing.rowCount && existing.rowCount > 0) {
-      return existing.rows[0];
-    }
-
-    const sessionId = crypto.randomUUID();
-    const created = await pool.query<ChatSessionRecord>(
-      'INSERT INTO chat_sessions (id, user_id) VALUES ($1, $2) RETURNING id, user_id, started_at',
-      [sessionId, userId]
-    );
-    return created.rows[0];
+    const created = await ChatSession.create({ user_id: userId });
+    return created.get({ plain: true }) as ChatSessionRecord;
   }
 
   async getSessionMessages(sessionId: string): Promise<ChatMessageRecord[]> {
-    const res = await pool.query<ChatMessageRecord>(
-      'SELECT id, session_id, role, content, created_at FROM chat_messages WHERE session_id = $1 ORDER BY created_at ASC',
-      [sessionId]
-    );
-    return res.rows;
+    const { ChatMessage } = await getModels();
+    const messages = await ChatMessage.findAll({
+      where: { session_id: sessionId },
+      order: [['created_at', 'ASC']],
+    });
+    return messages.map((message) => message.get({ plain: true }) as ChatMessageRecord);
   }
 
   async saveMessage(
@@ -65,12 +60,9 @@ export class AIAssistantService {
     role: 'user' | 'assistant' | 'system',
     content: string
   ): Promise<ChatMessageRecord> {
-    const messageId = crypto.randomUUID();
-    const res = await pool.query<ChatMessageRecord>(
-      'INSERT INTO chat_messages (id, session_id, role, content) VALUES ($1, $2, $3, $4) RETURNING id, session_id, role, content, created_at',
-      [messageId, sessionId, role, content]
-    );
-    return res.rows[0];
+    const { ChatMessage } = await getModels();
+    const message = await ChatMessage.create({ session_id: sessionId, role, content });
+    return message.get({ plain: true }) as ChatMessageRecord;
   }
 
   async getContext(query: string): Promise<string> {
@@ -84,29 +76,40 @@ export class AIAssistantService {
 
     if (keywords.length > 0) {
       const searchTerms = `%${keywords.join('%')}%`;
-      const kRes = await pool.query(
-        `SELECT title, artist, genre, content FROM music_knowledge 
-         WHERE LOWER(content) LIKE $1 OR LOWER(title) LIKE $1 OR LOWER(genre) LIKE $1 
-         LIMIT 2`,
-        [searchTerms]
-      );
+      const { MusicKnowledge, Track } = await getModels();
+      const knowledge = await MusicKnowledge.findAll({
+        attributes: ['title', 'artist', 'genre', 'content'],
+        where: {
+          [Op.or]: [
+            where(fn('LOWER', col('content')), { [Op.like]: searchTerms }),
+            where(fn('LOWER', col('title')), { [Op.like]: searchTerms }),
+            where(fn('LOWER', col('genre')), { [Op.like]: searchTerms }),
+          ],
+        },
+        limit: 2,
+      });
 
-      if (kRes.rowCount && kRes.rowCount > 0) {
-        knowledgeSnippet = kRes.rows
-          .map((k) => `[Music Fact - ${k.title} (${k.genre})]: ${k.content}`)
+      if (knowledge.length > 0) {
+        knowledgeSnippet = knowledge
+          .map((item) => `[Music Fact - ${item.title} (${item.genre})]: ${item.content}`)
           .join('\n');
       }
 
-      const tRes = await pool.query(
-        `SELECT title, artist, genre_id FROM tracks 
-         WHERE LOWER(title) LIKE $1 OR LOWER(artist) LIKE $1 OR LOWER(genre_id) LIKE $1 
-         LIMIT 4`,
-        [searchTerms]
-      );
+      const tracks = await Track.findAll({
+        attributes: ['title', 'artist', 'genre_id'],
+        where: {
+          [Op.or]: [
+            where(fn('LOWER', col('title')), { [Op.like]: searchTerms }),
+            where(fn('LOWER', col('artist')), { [Op.like]: searchTerms }),
+            where(fn('LOWER', col('genre_id')), { [Op.like]: searchTerms }),
+          ],
+        },
+        limit: 4,
+      });
 
-      if (tRes.rowCount && tRes.rowCount > 0) {
-        trackRecommendations = tRes.rows
-          .map((t) => `• "${t.title}" by ${t.artist} (${t.genre_id})`)
+      if (tracks.length > 0) {
+        trackRecommendations = tracks
+          .map((track) => `• "${track.title}" by ${track.artist} (${track.genre_id})`)
           .join('\n');
       }
     }
@@ -117,7 +120,10 @@ export class AIAssistantService {
   async detectMusicIntentAndCurate(userMessage: string): Promise<PlaylistAction | null> {
     const q = userMessage.toLowerCase();
     const isPlayDirect = /\b(play|start|listen|spin|hear|put on|stream)\b/i.test(q);
-    const isPlaylistIntent = /\b(playlist|mix|set|collection|tracks|songs|queue|make|create|curate|vibe|recommend)\b/i.test(q);
+    const isPlaylistIntent =
+      /\b(playlist|mix|set|collection|tracks|songs|queue|make|create|curate|vibe|recommend)\b/i.test(
+        q
+      );
 
     if (!isPlayDirect && !isPlaylistIntent) {
       return null;
@@ -128,23 +134,55 @@ export class AIAssistantService {
     let playlistTitle = 'Curated Neural Flow';
     let playlistDesc = 'Bespoke frequencies compiled by DJ Muse';
 
-    if (q.includes('metal') || q.includes('industrial') || q.includes('heavy') || q.includes('metallica') || q.includes('slipknot')) {
+    if (
+      q.includes('metal') ||
+      q.includes('industrial') ||
+      q.includes('heavy') ||
+      q.includes('metallica') ||
+      q.includes('slipknot')
+    ) {
       genreFilter = ['metal'];
       playlistTitle = '⚡ Cyberpunk Heavy Metal Flow';
       playlistDesc = 'Distorted guitars, industrial basslines, and relentless energy';
-    } else if (q.includes('rock') || q.includes('grunge') || q.includes('indie') || q.includes('nirvana') || q.includes('zeppelin') || q.includes('floyd')) {
+    } else if (
+      q.includes('rock') ||
+      q.includes('grunge') ||
+      q.includes('indie') ||
+      q.includes('nirvana') ||
+      q.includes('zeppelin') ||
+      q.includes('floyd')
+    ) {
       genreFilter = ['rock'];
       playlistTitle = '🎸 Electric Overdrive Rock Set';
       playlistDesc = 'Driving riffs, punchy acoustics, and legendary rock anthems';
-    } else if (q.includes('jazz') || q.includes('bebop') || q.includes('swing') || q.includes('miles davis') || q.includes('coltrane')) {
+    } else if (
+      q.includes('jazz') ||
+      q.includes('bebop') ||
+      q.includes('swing') ||
+      q.includes('miles davis') ||
+      q.includes('coltrane')
+    ) {
       genreFilter = ['jazz'];
       playlistTitle = '🎷 Midnight Velvet Jazz Club';
       playlistDesc = 'Smooth saxophone solos, warm double bass, and iconic bebop classics';
-    } else if (q.includes('blues') || q.includes('bleu') || q.includes('soul') || q.includes('b.b. king') || q.includes('bb king') || q.includes('vaughan')) {
+    } else if (
+      q.includes('blues') ||
+      q.includes('bleu') ||
+      q.includes('soul') ||
+      q.includes('b.b. king') ||
+      q.includes('bb king') ||
+      q.includes('vaughan')
+    ) {
       genreFilter = ['blues'];
       playlistTitle = '🎸 Raw Delta & Electric Blues Session';
-      playlistDesc = 'Expressive guitar bends, soul-stirring organ riffs, and legendary blues grooves';
-    } else if (q.includes('synthwave') || q.includes('retro') || q.includes('80s') || q.includes('neon')) {
+      playlistDesc =
+        'Expressive guitar bends, soul-stirring organ riffs, and legendary blues grooves';
+    } else if (
+      q.includes('synthwave') ||
+      q.includes('retro') ||
+      q.includes('80s') ||
+      q.includes('neon')
+    ) {
       genreFilter = ['synthwave'];
       playlistTitle = '🏎️ Neon Cyber Horizon Mix';
       playlistDesc = 'Outrun analog synths and midnight highway grooves';
@@ -160,49 +198,55 @@ export class AIAssistantService {
       genreFilter = ['lofi'];
       playlistTitle = '☕ Rainy Cafe Lo-Fi Study Room';
       playlistDesc = 'Mellow tape saturation and warm jazzy progressions';
-    } else if (q.includes('ambient') || q.includes('focus') || q.includes('cryo') || q.includes('drone')) {
+    } else if (
+      q.includes('ambient') ||
+      q.includes('focus') ||
+      q.includes('cryo') ||
+      q.includes('drone')
+    ) {
       genreFilter = ['ambient'];
       playlistTitle = '🌌 Deep Starlight Atmospheric Focus';
       playlistDesc = 'Zero-gravity pads and glacial soundscapes';
-    } else if (q.includes('electronic') || q.includes('dance') || q.includes('club') || q.includes('techno') || q.includes('edm')) {
+    } else if (
+      q.includes('electronic') ||
+      q.includes('dance') ||
+      q.includes('club') ||
+      q.includes('techno') ||
+      q.includes('edm')
+    ) {
       genreFilter = ['electronic'];
       playlistTitle = '🔊 Sub-Zero Digital Voltage';
       playlistDesc = 'Kinetic rhythms and high-frequency synth drops';
-    } else if (q.includes('hiphop') || q.includes('hip-hop') || q.includes('rap') || q.includes('trap')) {
+    } else if (
+      q.includes('hiphop') ||
+      q.includes('hip-hop') ||
+      q.includes('rap') ||
+      q.includes('trap')
+    ) {
       genreFilter = ['hiphop'];
       playlistTitle = '🔥 Metropolis 808 Cypher';
       playlistDesc = 'Heavy low-end punch and smooth rhythmic flows';
     } else {
       // Check for specific track mentions
-      const tracksAll = await pool.query('SELECT title FROM tracks');
-      for (const row of tracksAll.rows) {
-        if (q.includes(row.title.toLowerCase())) {
-          titleQuery = row.title.toLowerCase();
-          playlistTitle = `🎵 Track Spotlight: ${row.title}`;
+      const { Track } = await getModels();
+      const tracksAll = await Track.findAll({ attributes: ['title'] });
+      for (const track of tracksAll) {
+        if (q.includes(track.title.toLowerCase())) {
+          titleQuery = track.title.toLowerCase();
+          playlistTitle = `🎵 Track Spotlight: ${track.title}`;
           playlistDesc = `Selected stream tuned to your request`;
           break;
         }
       }
     }
 
-    let tracksQuery = '';
-    let params: any[] = [];
-
-    if (titleQuery) {
-      tracksQuery = `SELECT id, title, artist, genre_id, audio_url, cover_url, duration FROM tracks WHERE LOWER(title) LIKE $1 LIMIT 5`;
-      params = [`%${titleQuery}%`];
-    } else if (genreFilter.length > 0) {
-      tracksQuery = `SELECT id, title, artist, genre_id, audio_url, cover_url, duration FROM tracks WHERE genre_id = ANY($1) ORDER BY RANDOM() LIMIT 5`;
-      params = [genreFilter];
-    } else {
-      tracksQuery = `SELECT id, title, artist, genre_id, audio_url, cover_url, duration FROM tracks ORDER BY RANDOM() LIMIT 5`;
-      params = [];
-    }
-
     // Extract potential search keywords by stripping common intent prefixes
     const searchTarget = userMessage
       .replace(/\b(can you|please|could you|i want to|i need|hey dj muse|dj muse)\b/gi, '')
-      .replace(/\b(play me|play some|play|stream|listen to|put on|spin|curate a playlist of|curate a playlist|make a playlist of|make a playlist|make a|create a playlist of|create a playlist|recommend songs like|recommend songs)\b/gi, '')
+      .replace(
+        /\b(play me|play some|play|stream|listen to|put on|spin|curate a playlist of|curate a playlist|make a playlist of|make a playlist|make a|create a playlist of|create a playlist|recommend songs like|recommend songs)\b/gi,
+        ''
+      )
       .trim();
 
     if (searchTarget.length > 1 && genreFilter.length === 0) {
@@ -213,7 +257,11 @@ export class AIAssistantService {
     try {
       // 1. If user asked for a specific artist/song, query live full-length catalog
       if (searchTarget.length > 2) {
-        const liveTracks = await musicService.searchFullLengthTracks(searchTarget, genreFilter[0], 6);
+        const liveTracks = await musicService.searchFullLengthTracks(
+          searchTarget,
+          genreFilter[0],
+          6
+        );
         if (liveTracks.length > 0) {
           return {
             type: isPlayDirect ? 'play_track' : 'playlist',
@@ -234,16 +282,27 @@ export class AIAssistantService {
       }
 
       // 2. Query local DB tracks
-      const res = await pool.query(tracksQuery, params);
-      if (res.rowCount && res.rowCount > 0) {
-        const formattedTracks = res.rows.map((r: any) => ({
-          id: r.id,
-          title: r.title,
-          artist: r.artist,
-          genreId: r.genre_id,
-          audioUrl: r.audio_url,
-          coverUrl: r.cover_url,
-          duration: r.duration,
+      const { Track } = await getModels();
+      const whereClause = titleQuery
+        ? where(fn('LOWER', col('title')), { [Op.like]: `%${titleQuery}%` })
+        : genreFilter.length
+          ? { genre_id: { [Op.in]: genreFilter } }
+          : undefined;
+      const tracks = await Track.findAll({
+        attributes: ['id', 'title', 'artist', 'genre_id', 'audio_url', 'cover_url', 'duration'],
+        where: whereClause,
+        order: [[literal('RANDOM()'), 'ASC']],
+        limit: 5,
+      });
+      if (tracks.length > 0) {
+        const formattedTracks = tracks.map((track) => ({
+          id: track.id,
+          title: track.title,
+          artist: track.artist,
+          genreId: track.genre_id,
+          audioUrl: track.audio_url,
+          coverUrl: track.cover_url,
+          duration: track.duration,
         }));
 
         return {
@@ -273,7 +332,8 @@ export class AIAssistantService {
 
     let playlistContext = '';
     if (curatedPlaylist) {
-      playlistContext = `\nYou have generated a playlist for the user named "${curatedPlaylist.title}" with tracks:\n` +
+      playlistContext =
+        `\nYou have generated a playlist for the user named "${curatedPlaylist.title}" with tracks:\n` +
         curatedPlaylist.tracks.map((t) => `- "${t.title}" by ${t.artist}`).join('\n') +
         `\nInform the user you crafted this playlist and they can tap Play to listen immediately!`;
     }
@@ -442,20 +502,16 @@ ${playlistContext}`;
 
   private cleanPlainSpeech(text: string): string {
     return text
-      .replace(/\*\*(.*?)\*\*/g, '$1')   // Remove bold **
-      .replace(/\*(.*?)\*/g, '$1')       // Remove italic *
-      .replace(/#{1,6}\s+/g, '')         // Remove headers #
-      .replace(/^\s*[-*•]\s+/gm, '')     // Remove list bullet points
-      .replace(/`([^`]+)`/g, '$1')       // Remove backticks
-      .replace(/\n{3,}/g, '\n\n')        // Normalize excess line breaks
+      .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold **
+      .replace(/\*(.*?)\*/g, '$1') // Remove italic *
+      .replace(/#{1,6}\s+/g, '') // Remove headers #
+      .replace(/^\s*[-*•]\s+/gm, '') // Remove list bullet points
+      .replace(/`([^`]+)`/g, '$1') // Remove backticks
+      .replace(/\n{3,}/g, '\n\n') // Normalize excess line breaks
       .trim();
   }
 
-  async streamResponse(
-    sessionId: string,
-    userMessage: string,
-    res: Response
-  ): Promise<void> {
+  async streamResponse(sessionId: string, userMessage: string, res: Response): Promise<void> {
     // 1. Fetch previous session history
     const history = await this.getSessionMessages(sessionId);
 

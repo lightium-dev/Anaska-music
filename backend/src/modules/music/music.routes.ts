@@ -1,10 +1,5 @@
 import { Router } from 'express';
-import {
-  getGenres,
-  getTracks,
-  getTrackById,
-  streamTrack,
-} from '../controllers/musicController';
+import { getGenres, getTracks, getTrackById, streamTrack } from './music.controller';
 
 const router = Router();
 

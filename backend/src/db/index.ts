@@ -1,95 +1,115 @@
-import { Pool as PgPool, QueryResult, QueryResultRow } from 'pg';
+import { Sequelize } from 'sequelize';
 import { config } from '../config/env';
+import { initializeModels, DatabaseModels } from './models';
 import { getOrCreateMemoryDb } from './memoryDb';
 
-export const realPgPool = new PgPool({
-  connectionString: config.database.url,
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 3000,
-});
+let initialization: Promise<void> | null = null;
+let sequelize: Sequelize | null = null;
+let models: DatabaseModels | null = null;
+let usingMemoryDb = false;
 
-realPgPool.on('error', (err) => {
-  // Only log if not a connection refusal during fallback
-  if ((err as any).code !== 'ECONNREFUSED') {
-    console.error('PostgreSQL idle client error:', err);
-  }
-});
+const isConnectionUnavailable = (error: unknown): boolean => {
+  let current: unknown = error;
 
-let isUsingMemoryDb = false;
-let memoryPoolPromise: Promise<any> | null = null;
-let dbCheckDone = false;
-
-async function getActivePool(): Promise<any> {
-  if (dbCheckDone) {
-    if (isUsingMemoryDb) {
-      if (!memoryPoolPromise) memoryPoolPromise = getOrCreateMemoryDb().then((r) => r.pool);
-      return memoryPoolPromise;
+  while (current instanceof Error) {
+    const code = (current as NodeJS.ErrnoException).code;
+    if (['ECONNREFUSED', 'ETIMEDOUT', 'EHOSTUNREACH', 'ENOTFOUND'].includes(code || '')) {
+      return true;
     }
-    return realPgPool;
+    current =
+      (current as Error & { parent?: unknown; original?: unknown }).parent ||
+      (current as Error & { original?: unknown }).original;
   }
 
-  // First time check
-  try {
-    const client = await realPgPool.connect();
-    client.release();
-    dbCheckDone = true;
-    isUsingMemoryDb = false;
-    return realPgPool;
-  } catch (err: any) {
-    dbCheckDone = true;
-    isUsingMemoryDb = true;
-    console.log(
-      '⚡ [Anaska DB] PostgreSQL container not detected on localhost:5432.'
-    );
-    console.log(
-      '📦 [Anaska DB] Auto-activated In-Memory Database with pre-seeded tracks & DJ Muse knowledge!'
-    );
-    memoryPoolPromise = getOrCreateMemoryDb().then((r) => r.pool);
-    return memoryPoolPromise;
-  }
+  return false;
+};
+
+async function connectMemoryDatabase(): Promise<void> {
+  const { db } = await getOrCreateMemoryDb();
+  sequelize = new Sequelize(config.database.url, {
+    dialect: 'postgres',
+    dialectModule: db.adapters.createPg(),
+    logging: false,
+    pool: { max: 10, idle: 30000, acquire: 3000 },
+  });
+  await sequelize.authenticate();
+  usingMemoryDb = true;
 }
 
-export const query = async <T extends QueryResultRow = any>(
-  text: string,
-  params?: any[]
-): Promise<QueryResult<T>> => {
-  const activePool = await getActivePool();
-  return activePool.query(text, params);
-};
+async function connect(): Promise<void> {
+  if (config.nodeEnv === 'test') {
+    await connectMemoryDatabase();
+  } else {
+    const postgres = new Sequelize(config.database.url, {
+      dialect: 'postgres',
+      logging: false,
+      pool: { max: 20, idle: 30000, acquire: 3000 },
+      dialectOptions: { connectionTimeoutMillis: 3000 },
+    });
 
-// Proxy pool export to maintain complete backward compatibility with all imports
-export const pool = {
-  query: async <T extends QueryResultRow = any>(text: string, params?: any[]): Promise<QueryResult<T>> => {
-    const activePool = await getActivePool();
-    return activePool.query(text, params);
-  },
-  on: (event: any, listener: (...args: any[]) => void) => {
-    realPgPool.on(event, listener);
-    return pool;
-  },
-  end: async () => {
-    if (!isUsingMemoryDb) {
-      await realPgPool.end();
+    try {
+      await postgres.authenticate();
+      sequelize = postgres;
+    } catch (error) {
+      await postgres.close();
+      if (!isConnectionUnavailable(error)) {
+        throw error;
+      }
+
+      await connectMemoryDatabase();
+      console.log('⚡ [Anaska DB] PostgreSQL unavailable; using the seeded in-memory database.');
     }
-  },
-};
+  }
 
-export const checkDbConnection = async (): Promise<boolean> => {
+  const connectedSequelize = sequelize;
+  if (!connectedSequelize) {
+    throw new Error('Database connection was not established');
+  }
+  models = initializeModels(connectedSequelize);
+  await connectedSequelize.sync();
+}
+
+export async function initializeDatabase(): Promise<void> {
+  if (!initialization) {
+    initialization = connect().catch((error: unknown) => {
+      initialization = null;
+      throw error;
+    });
+  }
+  await initialization;
+}
+
+export async function getModels(): Promise<DatabaseModels> {
+  await initializeDatabase();
+  if (!models) {
+    throw new Error('Database models were not initialized');
+  }
+  return models;
+}
+
+export async function checkDbConnection(): Promise<boolean> {
   try {
-    const p = await getActivePool();
-    const res = await p.query('SELECT NOW() as now_time');
-    const time = res.rows[0]?.now_time || new Date().toISOString();
-    if (isUsingMemoryDb) {
-      console.log('✓ Database operational in [In-Memory Mode] at:', time);
-    } else {
-      console.log('✓ PostgreSQL connected successfully at:', time);
-    }
+    await initializeDatabase();
+    await sequelize!.query('SELECT NOW() AS now_time');
+    console.log(
+      usingMemoryDb
+        ? '✓ Database operational in [In-Memory Mode]'
+        : '✓ PostgreSQL connected successfully'
+    );
     return true;
   } catch (error) {
     console.error('✗ Database check failed:', error);
     return false;
   }
-};
+}
 
-export const isMemoryMode = (): boolean => isUsingMemoryDb;
+export const isMemoryMode = (): boolean => usingMemoryDb;
+
+export async function closeDatabase(): Promise<void> {
+  if (sequelize) {
+    await sequelize.close();
+    sequelize = null;
+    models = null;
+    initialization = null;
+  }
+}

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { authService } from '../services/AuthService';
-import { AuthenticatedRequest } from '../middlewares/authMiddleware';
+import { authService } from './auth.service';
+import { AuthenticatedRequest } from '../../middlewares/authMiddleware';
 
 const signupSchema = z.object({
   username: z.string().min(3).max(50),

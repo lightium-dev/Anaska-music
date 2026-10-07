@@ -1,9 +1,9 @@
-import { checkDbConnection, pool } from './index';
+import { checkDbConnection, closeDatabase } from './index';
 
 async function main() {
-  console.log('Testing PostgreSQL database connection...');
+  console.log('Testing database connection...');
   const success = await checkDbConnection();
-  await pool.end();
+  await closeDatabase();
   if (!success) {
     process.exit(1);
   }

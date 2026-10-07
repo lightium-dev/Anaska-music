@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { musicService } from '../services/MusicService';
+import { musicService } from './music.service';
 
 export const getGenres = async (_req: Request, res: Response, next: NextFunction) => {
   try {

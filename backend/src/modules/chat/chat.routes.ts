@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { streamChat, getHistory } from '../controllers/chatController';
-import { optionalAuth } from '../middlewares/authMiddleware';
+import { streamChat, getHistory } from './chat.controller';
+import { optionalAuth } from '../../middlewares/authMiddleware';
 
 const router = Router();
 

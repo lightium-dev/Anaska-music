@@ -1,15 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
-import { authService, UserPayload } from '../services/AuthService';
+import { authService, UserPayload } from '../modules/auth/auth.service';
 
 export interface AuthenticatedRequest extends Request {
   user?: UserPayload;
 }
 
-export const requireAuth = (
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction
-): void => {
+export const requireAuth = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
